@@ -4,7 +4,7 @@ MUSA 統括 / PM秘書オーケストレータ。詳細アルゴリズムは分�
 - A/B/C(スケジュール/リスケ/スプリント) → [`docs/design/scheduling.md`](docs/design/scheduling.md)
 - D/E(Googleカレンダー/Memoria引継ぎ) → [`docs/design/calendar-memoria.md`](docs/design/calendar-memoria.md)
 - PM運用拡張 F1-F7(承認キュー/ブリーフィング/リスク/精度) → [`docs/design/pm-extensions.md`](docs/design/pm-extensions.md)
-- 実装フェーズ(Codex 委託) → [`docs/CODEX-P0.md`](docs/CODEX-P0.md)
+- 実装フェーズ(Codex 委託) → [`docs/CODEX-P0.md`](docs/CODEX-P0.md) / [`docs/CODEX-P1.md`](docs/CODEX-P1.md)
 - 仕様レビュー(2026-07-09, 反映済) → [`docs/reviews/2026-07-09-spec-review.md`](docs/reviews/2026-07-09-spec-review.md)
 
 ---
