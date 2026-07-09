@@ -43,32 +43,39 @@ DESIGN §3 の全テーブルを drizzle(sqlite-core)で実装。フィールド
 **注**: 個人データ列を作らない。task/event/goal は `*_ref` の id 参照 + 非個人フィールドのみ。
 完了後 `npm run db:generate` → `npm run db:migrate` が通ること。
 
+**2026-07-09 レビュー反映(as-built 修正)**:
+- `calendar_link.google_calendar_id` → **`calendar_ref`** に変更(`'primary'` or Schedula 参照 id。
+  primary の生 ID は email そのものになるため保存しない。calendar-memoria.md D.3)。
+- task/goal 参照は正規文字列形 **`actio:<taskId>` / `actio-pm:<projectId>/<externalId>`** に統一。
+  `plan_entry.task_ref` / `sprint_task.task_ref` の JSON 参照を text に変更(DESIGN §3)。
+
 ### T2. リポジトリ層 — `src/db/repository.ts`
 各テーブルの CRUD を集約(ルートから直接 db を触らない = Actio 規約に倣う)。P0 では `connector_state` の upsert/read と、plan/velocity の基本 insert/select を用意(上位で使う最小)。
 
 ### T3. ActioConnector — `src/clients/actio.ts`
 `makeActioClient({ baseUrl, token })` factory(`makeHttp` 使用)。read メソッド:
 - `listTasks()` → `GET /api/tasks`(kind/status/category/priority/due/estimatedMinutes/completedAt/creatorType)
-- `listPmTasks(projectId)` → `GET /api/pm/...`(pm_tasks: externalId/status/priority/labels/blockedBy/dueDate/milestone)
-- `getGompertz(projectId)` → `GET /api/pm/analytics/gompertz`(estimatedTotalBugs/convergenceDate/confidence)
-- `getCriticalPath(projectId)` → `GET /api/pm/analytics/critical-path`(longest path/projectedCompletionDate/riskLevel)
+- `listPmTasks(projectId)` → `GET /api/pm/projects/:projectId/tasks`(pm_tasks: externalId/status/priority/labels/blockedBy/dueDate/milestone)
+- `getGompertz(projectId)` → `GET /api/pm/projects/:projectId/analytics/gompertz`(estimatedTotalBugs/convergenceDate/confidence)
+- `getCriticalPath(projectId)` → `GET /api/pm/projects/:projectId/analytics/critical-path`(longest path/projectedCompletionDate/riskLevel)
 - `listPmProjects()` → `GET /api/pm/projects`
 - (write は P1 以降。P0 は read のみ)
 
-**要検証**: 正確なパス/レスポンス形は `../Actio/modules/pm/routes.ts` と `../Actio/src/app.ts`(userContext 認証)で確認。認証は Cernere service token(Bearer)。
+**検証済(2026-07-09)**: 上記パスは P0 実装(`src/clients/actio.ts`)で確定。認証は Cernere service token(Bearer)。
 
 ### T4. SchedulaConnector — `src/clients/schedula.ts`
 - `listEvents(range)` → `GET /api/events`
-- `listPersonalEvents(range)` → 予定(personal_events)
-- `getScheduling(...)` → smart-scheduler 関連(あれば)
-- `freeBusy(range)` → **P4 で Schedula 側に追加予定**。P0 では stub(未実装なら 501 を返すか、events から近似)+ TODO コメント。
+- `listPersonalEvents()` → `GET /api/calendar/personal` / `listCalendarEvents(range)` → `GET /api/calendar/events`
+- `getCalendarStatus()` → `GET /api/calendar/status`
+- `freeBusy(range)` → **P4a で Schedula 側に追加**。P0 実装では未着手(レビュー指摘 A-2)。
+  **P1c で Calliope 側合成の近似 freeBusy(events + personal_events)を実装**し、P4b で Schedula 版へ差し替える(scheduling.md §4.3)。
 
-**要検証**: `../Schedula/src/app.ts` / `../Schedula/modules/calendar/routes.ts`。
+**検証済(2026-07-09)**: 上記パスは P0 実装(`src/clients/schedula.ts`)で確定。smart-scheduler 系(`getScheduling`)は P1c で必要になった時点で追加。
 
 ### T5. MemoriaConnector — `src/clients/memoria.ts`(read-only)
 - `getRoadmaps()` → `GET /api/roadmaps`(line/member importance)
 - `getGoalEvals(month)` → `GET /api/goal-evals?month=`
-- `listAgentRuns()` → agent_runs(velocity 元)。**要検証**: エンドポイント名を `../Memoria/server/routes/` で確認(無ければ Memoria 側に read 用 endpoint 追加を別 issue 化)。
+- `listAgentRuns()` → `GET /api/agent-runs`(velocity 元)。**検証済(2026-07-09)**: パスは P0 実装(`src/clients/memoria.ts`)で確定。
 - 注意: Memoria は multi モードで `/api/tasks` 等が `local_only`(503)。roadmap/goal-evals の multi 挙動を確認し、local_only の場合は fallback(roadmap-* JSON 直読)を検討。
 
 ### T6. health 拡張 + route mount 雛形 — `src/index.ts` / `src/routes/`

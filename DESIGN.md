@@ -3,7 +3,9 @@
 MUSA 統括 / PM秘書オーケストレータ。詳細アルゴリズムは分冊:
 - A/B/C(スケジュール/リスケ/スプリント) → [`docs/design/scheduling.md`](docs/design/scheduling.md)
 - D/E(Googleカレンダー/Memoria引継ぎ) → [`docs/design/calendar-memoria.md`](docs/design/calendar-memoria.md)
+- PM運用拡張 F1-F7(承認キュー/ブリーフィング/リスク/精度) → [`docs/design/pm-extensions.md`](docs/design/pm-extensions.md)
 - 実装フェーズ(Codex 委託) → [`docs/CODEX-P0.md`](docs/CODEX-P0.md)
+- 仕様レビュー(2026-07-09, 反映済) → [`docs/reviews/2026-07-09-spec-review.md`](docs/reviews/2026-07-09-spec-review.md)
 
 ---
 
@@ -52,9 +54,11 @@ AI実行実績/roadmap=Memoria、Unity女神モジュール起動停止(将来 C
 | `priority` | PJ/goal/task, roadmap importance + override → 解決値 |
 | `curve_snapshot` | sprint参照, date, gompertz params, inflow λ, burndown |
 | `connector_state` | サービス種別, health, last_sync, cursor |
-| `calendar_link` | Googleカレンダー連携設定(Schedula経由), 同期方向, 対象カレンダーID |
+| `calendar_link` | Googleカレンダー連携設定(Schedula経由), 同期方向, calendar_ref(`'primary'` or Schedula 参照 id。**生カレンダーID = email になりうる値は保存しない**) |
+| `confirmation` | 高リスク操作の裁定待ちキュー(kind, payload, status, decided_by/at)→ [pm-extensions.md F1] |
 
 個人データ(name/email)は持たない。破壊更新なし(supersede で版管理)。
+task/goal 参照は正規文字列形 **`actio:<taskId>` / `actio-pm:<projectId>/<externalId>`** に全テーブルで統一(JSON 参照は使わない)。
 
 ## 4. コネクタ
 
@@ -85,6 +89,8 @@ AI実行実績/roadmap=Memoria、Unity女神モジュール起動停止(将来 C
 ## 6. 自律性モデル
 
 提案 → 適用の2段。低リスク=auto-apply+事後通知 / 高リスク=`409 human_confirmation_required`(Thaleia パターン)。
+409 は `confirmation_id` を返して裁定待ちレコードを永続化し、承認キュー(`GET /api/confirmations` /
+`POST /api/confirmations/:id` approve/reject)で人間が裁定する(P3。→ [pm-extensions.md F1])。
 全 apply は履歴化、破壊更新なし。
 
 ## 7. API(抜粋)
@@ -92,7 +98,11 @@ AI実行実績/roadmap=Memoria、Unity女神モジュール起動停止(将来 C
 `POST /api/plan/generate` `POST /api/plan/:id/apply` `GET /api/plan` /
 `POST /api/reschedule/trigger` `GET /api/reschedule/log` /
 `GET/POST /api/sprint` `POST /api/sprint/:id/replan` / `GET /api/velocity` /
+`GET /api/confirmations` `POST /api/confirmations/:id` /
 `POST /api/calendar/sync` / `GET /health`。破壊操作は Cernere session/WS。
+
+**認証**: `/api/*` は service token(Bearer, env `CALLIOPE_SERVICE_TOKEN`)。token 設定時は全 `/api/*` で必須、
+未設定時は開発モード(起動時に警告ログ)。`/health` は常に公開。
 
 ## 8. 技術スタック
 
@@ -123,3 +133,5 @@ Hono + TS(ESM/NodeNext) + tsx / Drizzle + better-sqlite3(自DB) / vitest。
 | **P6(保留)** | 外部PM Linear + 資料群バインド(結合方式決定後) |
 
 各 Phase は full-set-implementation 準拠(MVP で削らず配線・テストまで完結)。P0 詳細は [`docs/CODEX-P0.md`](docs/CODEX-P0.md)。
+PM運用拡張(F1-F7)の Phase 割当は [`docs/design/pm-extensions.md`](docs/design/pm-extensions.md) の採用推奨順を参照
+(F5→P1a 同梱 / F4→P2 / F1・F3→P3 / F2→P3.5 / F7→P5 / F6→保留)。

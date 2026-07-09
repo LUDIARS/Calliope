@@ -1,7 +1,8 @@
 # Calliope 詳細設計 v0.2 — D(Googleカレンダー連動) / E(Memoria目標・タスク引継ぎ)
 
-親設計: CALLIOPE-DESIGN-v0.1.md §5 D/E。本書はその2能力を詳細化する。
+親設計: [`../../DESIGN.md`](../../DESIGN.md)(設計書 v0.2)§5 D/E。本書はその2能力を詳細化する。
 作成: 2026-07-09 / 設計: Claude(Opus) / 実装委託: Codex
+改訂: 2026-07-09 仕様レビュー反映([`../reviews/2026-07-09-spec-review.md`](../reviews/2026-07-09-spec-review.md) A-2/A-3/B-6/C-1)
 
 ---
 
@@ -32,12 +33,17 @@ Calliope の前提として Schedula calendar を拡張する。**この拡張�
 ### D.3 Calliope 側の利用
 - **read(空き把握)**: `SchedulaConnector.freeBusy(range)` → 人間(neco)の予定で埋まっている時間帯を取得 → スケジューラ(A §4.2)の**人間ゲート配置制約**に使う。AI レーンは影響を受けず、人間の承認/レビューだけがカレンダー空きに従う。
 - **write(計画の可視化)**: 確定した計画ブロック・締切・人間ゲートを Schedula 経由で Google に書き、neco のカレンダー上に「AIが今どの PJ を進めているか / いつ判断が要るか」を表示。
-- **保持しないもの**: Google トークンは Schedula/Cernere が保持。Calliope は `calendar_link`(対象カレンダーID・同期方向・有効/無効)だけを持つ。
+- **保持しないもの**: Google トークンは Schedula/Cernere が保持。Calliope は `calendar_link`(`calendar_ref`・同期方向・有効/無効)だけを持つ。
+  **`calendar_ref` は `'primary'` エイリアス、または Schedula が発行する不透明な参照 id。Google の生カレンダー ID は保存しない**
+  (primary カレンダーの ID はユーザの email そのものであり、個人データ非保持規約 [[project_personal_data_rule]] に抵触するため)。
 
 ### D.4 ループ防止(重要)
 - Calliope が作った計画由来イベントには `extendedProperties.private.calliope = <plan_entry_id>` を付与。
 - pull 同期時にこのタグ付きイベントは「外部予定」として再取り込みしない(二重計上防止)。
 - 逆に neco が手で入れた予定・外部由来イベントのみを「人間の占有」として freeBusy に反映。
+- **supersede 時の後始末**: 新 plan の apply 時に旧 active plan と diff を取り、削除/移動された entry の
+  Google イベントは Schedula 経由で update/delete する(`plan_entry.schedula_event_id` + calliope タグで自イベントを特定)。
+  旧計画ブロックをカレンダーに残さない。plan 自体は supersede 版管理のまま(履歴は自DB に残る)。
 
 ### D.5 同期方向のセマンティクス(SoT境界)
 | 種別 | SoT | 流れ |
@@ -52,7 +58,7 @@ Calliope の前提として Schedula calendar を拡張する。**この拡張�
 
 ### D.7 Codex フェーズ
 - **P4a(Schedula)**: calendar モジュールに OAuth consent + write-back + freeBusy 集約 + syncToken 増分。別リポ PR。
-- **P4b(Calliope)**: SchedulaConnector.freeBusy/createEvent 結線 + `calendar_link` + ループ防止タグ + degrade。
+- **P4b(Calliope)**: SchedulaConnector.freeBusy/createEvent 結線 + `calendar_link` + ループ防止タグ + degrade。P1c の近似 freeBusy(scheduling.md §4.3)を Schedula 版へ差し替え。
 
 ---
 

@@ -1,0 +1,1 @@
+ALTER TABLE `calendar_link` RENAME COLUMN "google_calendar_id" TO "calendar_ref";

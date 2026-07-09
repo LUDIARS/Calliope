@@ -15,7 +15,8 @@ export const plan = sqliteTable('plan', {
 export const planEntry = sqliteTable('plan_entry', {
   id: text('id').primaryKey(),
   planId: text('plan_id').notNull().references(() => plan.id),
-  taskRef: text('task_ref', { mode: 'json' }).$type<unknown>().notNull(),
+  // 正規形 `actio:<taskId>` / `actio-pm:<projectId>/<externalId>`(DESIGN §3)
+  taskRef: text('task_ref').notNull(),
   startAt: text('start_at').notNull(),
   endAt: text('end_at').notNull(),
   lane: text('lane').notNull(),
@@ -39,7 +40,8 @@ export const sprint = sqliteTable('sprint', {
 export const sprintTask = sqliteTable('sprint_task', {
   id: text('id').primaryKey(),
   sprintId: text('sprint_id').notNull().references(() => sprint.id),
-  taskRef: text('task_ref', { mode: 'json' }).$type<unknown>().notNull(),
+  // 正規形 `actio:<taskId>` / `actio-pm:<projectId>/<externalId>`(DESIGN §3)
+  taskRef: text('task_ref').notNull(),
   statusHistory: text('status_history', { mode: 'json' }).$type<unknown>().notNull(),
 });
 
@@ -95,7 +97,8 @@ export const curveSnapshot = sqliteTable('curve_snapshot', {
 
 export const calendarLink = sqliteTable('calendar_link', {
   id: text('id').primaryKey(),
-  googleCalendarId: text('google_calendar_id').notNull(),
+  // 'primary' エイリアス or Schedula 発行の参照 id。Google の生カレンダー ID(email になりうる)は保存しない。
+  calendarRef: text('calendar_ref').notNull(),
   syncDirection: text('sync_direction', { enum: ['read', 'write', 'both'] }).notNull(),
   enabled: integer('enabled', { mode: 'boolean' }).notNull().default(true),
   updatedAt: text('updated_at').notNull(),
