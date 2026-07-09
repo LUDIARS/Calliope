@@ -1,0 +1,14 @@
+node_modules/
+dist/
+logs/
+*.log
+
+# env (example のみ許可)
+.env
+.env.*
+!.env.example
+
+# 自 DB スナップショット (schema/migrations は追跡, データは追跡しない)
+/data/*.db
+/data/*.db-*
+!/data/.gitkeep

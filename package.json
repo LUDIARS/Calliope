@@ -1,0 +1,29 @@
+{
+  "name": "calliope",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "MUSA Calliope — 統括 / PM秘書オーケストレータ。Actio(タスク) と Schedula(予定) と Memoria(roadmap/velocity) をバインドし、AI実装速度を加味したスケジュール・自動リスケ・スプリント自動管理を行う単独サービス。エンジンは二重実装せず統括に徹する。",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx src/db/migrate.ts"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.13.7",
+    "better-sqlite3": "^11.7.0",
+    "drizzle-orm": "^0.45.1",
+    "hono": "^4.6.14"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.10.2",
+    "drizzle-kit": "^0.30.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}
