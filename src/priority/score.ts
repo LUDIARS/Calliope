@@ -16,6 +16,7 @@ export interface PriorityScoreInput {
   taskPriority?: string | null;
   dueAt?: string | null;
   firstReadyAt?: string | null;
+  goalProgressUrgency?: number;
   now: Date;
   overrides?: PriorityOverrides;
 }
@@ -27,6 +28,7 @@ export interface PriorityBreakdown {
   urgency: number;
   aging: number;
   overdue_days?: number;
+  goal_progress_urgency?: number;
   override?: PriorityOverrides;
 }
 
@@ -69,13 +71,16 @@ export function scorePriority(input: PriorityScoreInput): {
     proj: clamp((input.projectImportance ?? 0) / 3),
     goal: normalizePriority(input.goalPriority),
     task: normalizePriority(input.taskPriority),
-    urgency: due.value,
+    urgency: Math.max(due.value, clamp(input.goalProgressUrgency ?? 0)),
     aging: aging(input.firstReadyAt, input.now),
   };
   const components = { ...base, ...input.overrides };
   const breakdown: PriorityBreakdown = {
     ...components,
     ...(due.overdueDays === undefined ? {} : { overdue_days: due.overdueDays }),
+    ...(input.goalProgressUrgency === undefined ? {} : {
+      goal_progress_urgency: clamp(input.goalProgressUrgency),
+    }),
     ...(input.overrides ? { override: input.overrides } : {}),
   };
   return {

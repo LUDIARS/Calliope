@@ -9,6 +9,7 @@ export interface CalliopeConfig {
   agentLanes: number;
   serviceToken: string | null;
   llmEstimation: boolean;
+  dailyOrchestration?: boolean;
   actio: UpstreamConfig;
   schedula: UpstreamConfig;
   memoria: UpstreamConfig;
@@ -40,6 +41,7 @@ export function loadConfig(): CalliopeConfig {
     agentLanes: positiveInteger(process.env.CALLIOPE_AGENT_LANES, 3, 'CALLIOPE_AGENT_LANES'),
     serviceToken: firstEnv('CALLIOPE_SERVICE_TOKEN'),
     llmEstimation: process.env.CALLIOPE_LLM_ESTIMATION !== 'off',
+    dailyOrchestration: process.env.CALLIOPE_DAILY_ORCHESTRATION !== 'off',
     actio: {
       baseUrl: firstEnv('ACTIO_BASE_URL', 'ACTIO_API_URL', 'ACTIO_URL'),
       token: firstEnv('ACTIO_TOKEN'),

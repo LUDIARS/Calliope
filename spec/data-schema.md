@@ -9,6 +9,7 @@ Calliope は計画成果物だけをローカル SQLite に保持する。タス
 | velocity / task_estimate | user | Calliope | SQLite | 要 | project/category/task_refと集計値のみ。agent prompt/logを保存しない |
 | priority | user | Calliope | SQLite | 要 | project/goal/task ref、合成値、first_ready_atのみ。上流本文を保存しない |
 | reschedule_log | user | Calliope | SQLite | 要 | plan差分は参照・計画枠のみに限定し、API認証下で提供 |
+| confirmation | user | Calliope | SQLite | 要 | task_ref/plan idとdiff/riskのみ。24h expiry、裁定者は非個人aliasのみ |
 | curve_snapshot | user | Calliope | SQLite | 要 | sprint参照と集計曲線のみ |
 | goal_risk_snapshot | user | Calliope | SQLite | 要 | goal_ref、日次予測・deadline・risk要因の集計値のみ |
 | connector_state | master | Calliope | SQLite | 不要 | service名・health・cursorのみ。tokenやerror本文を保存しない |
@@ -26,4 +27,6 @@ Calliope は計画成果物だけをローカル SQLite に保持する。タス
 - sprint_taskはcommit時の見積りとpriorityをsnapshotとして保持し、日次更新は状態履歴へ追記する。
 - curve_snapshotとgoal_risk_snapshotは参照+日付で一意。同日再計算はupsertし、過去日を破壊しない。
 - active sprintはprojectごとに1件。closeは次planned sprintの生成成功後に行う。
+- confirmationとhigh-risk proposal logは同一transactionで作成し、approve時はactive再検証後にplan/裁定/logを同一transactionで更新する。
+- reschedule_log.outcomeはproposed/applied/rejected/expiredを保持し、履歴行を削除しない。
 - 個人データの削除・opt-outは各正本サービスが担い、Calliopeには削除対象となる個人属性を置かない。

@@ -93,7 +93,23 @@ export const rescheduleLog = sqliteTable('reschedule_log', {
   appliedBy: text('applied_by', { enum: ['human', 'auto'] }).notNull(),
   reason: text('reason').notNull(),
   createdAt: text('created_at').notNull(),
+  outcome: text('outcome', { enum: ['proposed', 'applied', 'rejected', 'expired'] }).notNull().default('applied'),
+  confirmationId: text('confirmation_id'),
 });
+
+export const confirmation = sqliteTable('confirmation', {
+  id: text('id').primaryKey(),
+  kind: text('kind', { enum: ['plan_apply', 'reschedule', 'calendar_write'] }).notNull(),
+  payload: text('payload', { mode: 'json' }).$type<unknown>().notNull(),
+  status: text('status', { enum: ['pending', 'approved', 'rejected', 'expired'] }).notNull().default('pending'),
+  createdAt: text('created_at').notNull(),
+  expiresAt: text('expires_at').notNull(),
+  decidedAt: text('decided_at'),
+  decidedBy: text('decided_by'),
+  decisionReason: text('decision_reason'),
+}, (table) => [
+  index('idx_confirmation_status_expiry').on(table.status, table.expiresAt),
+]);
 
 export const priority = sqliteTable('priority', {
   id: text('id').primaryKey(),

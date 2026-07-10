@@ -34,6 +34,8 @@ export interface RescheduleLogInput {
   appliedBy: 'human' | 'auto';
   reason: string;
   createdAt: string;
+  outcome?: 'proposed' | 'applied' | 'rejected' | 'expired';
+  confirmationId?: string | null;
 }
 
 export function makePlanRepository(db: CalliopeDb) {
@@ -81,7 +83,11 @@ export function makePlanRepository(db: CalliopeDb) {
     },
 
     async createRescheduleLog(input: RescheduleLogInput) {
-      await db.insert(rescheduleLog).values(input);
+      await db.insert(rescheduleLog).values({
+        ...input,
+        outcome: input.outcome ?? 'applied',
+        confirmationId: input.confirmationId ?? null,
+      });
     },
 
     async listRescheduleLogs() {
@@ -104,6 +110,8 @@ export function makePlanRepository(db: CalliopeDb) {
           ...log,
           before: activePlans,
           after: active,
+          outcome: log.outcome ?? 'applied',
+          confirmationId: log.confirmationId ?? null,
         }).run();
         return { plan: active, superseded: activePlans.map((item) => item.id) };
       });

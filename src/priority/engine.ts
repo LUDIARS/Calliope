@@ -41,19 +41,35 @@ function overridesFromBreakdown(value: unknown): PriorityOverrides | undefined {
   return override && typeof override === 'object' ? override as PriorityOverrides : undefined;
 }
 
+function goalProgressUrgency(status: 'todo' | 'doing' | 'done', now: Date): number {
+  const observed = status === 'done' ? 1 : status === 'doing' ? 0.5 : 0;
+  const daysInMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0)).getUTCDate();
+  return Math.max(now.getUTCDate() / daysInMonth - observed, 0);
+}
+
 export function makePriorityEngine(deps: PriorityEngineDeps) {
   return {
     async refresh() {
-      const [tasks, roadmaps, existingRows] = await Promise.all([
+      const now = deps.now?.() ?? new Date();
+      const [tasks, roadmaps, existingRows, goalEvals] = await Promise.all([
         loadPlanningTasks(deps.actio),
         deps.memoria.getRoadmaps(),
         deps.repo.listPriorities(),
+        deps.memoria.getGoalEvals(now.toISOString().slice(0, 7)),
       ]);
-      const now = deps.now?.() ?? new Date();
       const nowIso = now.toISOString();
       const importance = roadmapImportance(roadmaps);
       const existing = new Map(existingRows.map((row) => [`${row.scope}:${row.ref}`, row]));
       const goals = tasks.filter((task) => task.kind === 'goal' && !isCompletedStatus(task.status));
+      const latestEvalByGoal = new Map<string, (typeof goalEvals)[number]>();
+      for (const item of goalEvals) {
+        const previous = latestEvalByGoal.get(item.goal_id);
+        if (!previous || item.date > previous.date) latestEvalByGoal.set(item.goal_id, item);
+      }
+      const progressUrgencyByGoal = new Map(goals.map((goal) => {
+        const evaluation = latestEvalByGoal.get(goal.sourceId);
+        return [goal.taskRef, evaluation ? goalProgressUrgency(evaluation.status, now) : 0] as const;
+      }));
       const activeTasks = tasks.filter((task) => !isCompletedStatus(task.status));
       const activeRefs = new Set(activeTasks.map((task) => task.taskRef));
       let projects = 0;
@@ -85,6 +101,7 @@ export function makePriorityEngine(deps: PriorityEngineDeps) {
           projectImportance: findImportance(goal.projectRef, importance),
           goalPriority: goal.priority,
           dueAt: goal.dueAt,
+          goalProgressUrgency: progressUrgencyByGoal.get(goal.taskRef),
           now,
           firstReadyAt: previous?.firstReadyAt,
           overrides: overridesFromBreakdown(previous?.breakdown),
@@ -111,6 +128,7 @@ export function makePriorityEngine(deps: PriorityEngineDeps) {
           goalPriority: goal?.priority,
           taskPriority: task.priority,
           dueAt: task.dueAt,
+          goalProgressUrgency: goal ? progressUrgencyByGoal.get(goal.taskRef) : undefined,
           now,
           firstReadyAt,
           overrides: overridesFromBreakdown(previous?.breakdown),

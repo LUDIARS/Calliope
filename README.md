@@ -64,6 +64,17 @@ CALLIOPE_SERVICE_TOKEN 設定時は全 /api/* にBearerが必要。/health は�
 | POST | /api/risk/refresh | critical-path×velocity信頼帯でgoal riskを日次更新 |
 | GET | /api/risk | goal_ref/levelでRisk Registerを取得 |
 
+## P3 API
+
+| Method | Path | 概要 |
+|---|---|---|
+| POST | /api/reschedule/trigger | event/daily変化からplan diffを生成し低リスクのみauto-apply |
+| GET | /api/reschedule/log | proposal/apply/reject/expire監査履歴 |
+| GET/POST | /api/confirmations | Decision Inbox一覧・approve/reject |
+| POST | /api/plan/simulate | lanes/priority/due変更のDB非書込What-if |
+
+`CALLIOPE_DAILY_ORCHESTRATION=on`（既定）で毎日07:30 JSTに統合ループを実行する。
+
 ## 技術スタック
 
 Hono + TypeScript(ESM/NodeNext) + tsx / Drizzle ORM + better-sqlite3(自DB) / vitest。
@@ -71,8 +82,8 @@ Hono + TypeScript(ESM/NodeNext) + tsx / Drizzle ORM + better-sqlite3(自DB) / vi
 
 ## 状態
 
-設計 v0.2 / P0基盤 / P1計画生成中核 / P2能力C・Risk Registerを実装済み。
-実装仕様は docs/CODEX-P0.md / docs/CODEX-P1.md / docs/CODEX-P2.md。
+設計 v0.2 / P0基盤 / P1計画生成中核 / P2能力C・Risk Register / P3能力B・自律性を実装済み。
+実装仕様は docs/CODEX-P0.md / docs/CODEX-P1.md / docs/CODEX-P2.md / docs/CODEX-P3.md。
 
 ## セットアップ TODO (運用)
 

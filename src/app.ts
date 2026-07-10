@@ -7,11 +7,14 @@ import { openDb } from './db/client.ts';
 import { makeRepository } from './db/repository.ts';
 import { apiAuth } from './routes/auth.ts';
 import { mountEstimateRoutes } from './routes/estimates.ts';
+import { mountConfirmationRoutes } from './routes/confirmations.ts';
 import { mountHealthRoutes } from './routes/health.ts';
 import { mountPlanRoutes } from './routes/plan.ts';
 import { mountPriorityRoutes } from './routes/priority.ts';
+import { mountRescheduleRoutes } from './routes/reschedule.ts';
 import { mountRiskRoutes } from './routes/risk.ts';
 import { mountSprintRoutes } from './routes/sprint.ts';
+import { mountSimulateRoutes } from './routes/simulate.ts';
 import { mountUpstreamRoutes } from './routes/upstreams.ts';
 import { mountVelocityRoutes } from './routes/velocity.ts';
 
@@ -39,8 +42,11 @@ export function createApp(config: CalliopeConfig, deps: CreateAppDeps = {}) {
   mountEstimateRoutes(app, { config, clients, repo });
   mountPriorityRoutes(app, { clients, repo });
   mountPlanRoutes(app, { config, clients, repo });
+  mountSimulateRoutes(app, { config, clients, repo });
   mountSprintRoutes(app, { config, clients, repo });
   mountRiskRoutes(app, { clients, repo });
+  mountRescheduleRoutes(app, { config, clients, repo });
+  mountConfirmationRoutes(app, { config, clients, repo });
 
   return app;
 }

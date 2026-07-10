@@ -49,7 +49,8 @@ function testDb(): CalliopeDb {
     );
     CREATE TABLE reschedule_log (
       id TEXT PRIMARY KEY, trigger TEXT NOT NULL, before TEXT NOT NULL, after TEXT NOT NULL,
-      applied_by TEXT NOT NULL, reason TEXT NOT NULL, created_at TEXT NOT NULL
+      applied_by TEXT NOT NULL, reason TEXT NOT NULL, created_at TEXT NOT NULL,
+      outcome TEXT NOT NULL DEFAULT 'applied', confirmation_id TEXT
     );
   `);
   return drizzle(sqlite, { schema });

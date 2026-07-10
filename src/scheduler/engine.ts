@@ -61,7 +61,13 @@ function selectGoalTasks<T extends { taskRef: string; category: string; kind: st
 
 export function makeSchedulerEngine(deps: SchedulerEngineDeps) {
   return {
-    async generate(input: { goalRefs?: string[]; horizonDays?: number } = {}) {
+    async generate(input: {
+      goalRefs?: string[];
+      horizonDays?: number;
+      lanes?: number;
+      priorityOverrides?: Record<string, number>;
+      persist?: boolean;
+    } = {}) {
       const actio = deps.clients.actio;
       if (!actio) throw new PlanningPrerequisiteError(['actio']);
       const horizonDays = input.horizonDays ?? 30;
@@ -126,7 +132,8 @@ export function makeSchedulerEngine(deps: SchedulerEngineDeps) {
               active.some((candidate) =>
                 !excludedRefs.has(candidate.taskRef) && candidate.taskRef === dependency)),
             durationMinutes: Math.max(duration, 1),
-            priority: prioritiesByRef.get(task.taskRef)?.resolvedScore ?? 0,
+            priority: input.priorityOverrides?.[task.taskRef] ??
+              prioritiesByRef.get(task.taskRef)?.resolvedScore ?? 0,
             confidence: entryConfidence(velocity),
             isHumanGate: task.isHumanGate,
           };
@@ -152,7 +159,7 @@ export function makeSchedulerEngine(deps: SchedulerEngineDeps) {
       }
 
       const entries = listSchedule(topo, {
-        lanes: deps.config.agentLanes,
+        lanes: input.lanes ?? deps.config.agentLanes,
         startAt: start.toISOString(),
         humanFreeSlots,
       });
@@ -166,15 +173,16 @@ export function makeSchedulerEngine(deps: SchedulerEngineDeps) {
         sampleSize: row.sampleSize,
         distribution: row.distribution,
       }));
-      await deps.repo.createPlanWithEntries({
+      const planRecord = {
         id: planId,
         goalRef: input.goalRefs?.length === 1 ? input.goalRefs[0] : null,
         periodStart: start.toISOString(),
         periodEnd: end.toISOString(),
-        status: 'draft',
+        status: 'draft' as const,
         velocitySnapshot,
         createdAt: start.toISOString(),
-      }, entries.map((entry) => ({
+      };
+      const entryRecords = entries.map((entry) => ({
         id: (deps.id ?? randomUUID)(),
         planId,
         taskRef: entry.taskRef,
@@ -185,7 +193,12 @@ export function makeSchedulerEngine(deps: SchedulerEngineDeps) {
         schedulaEventId: null,
         confidence: entry.confidence,
         isHumanGate: entry.isHumanGate,
-      })));
+      }));
+
+      if (input.persist === false) {
+        return { plan: { ...planRecord, entries: entryRecords }, warnings };
+      }
+      await deps.repo.createPlanWithEntries(planRecord, entryRecords);
 
       return {
         plan: await deps.repo.getPlanWithEntries(planId),

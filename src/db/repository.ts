@@ -1,5 +1,7 @@
 import type { CalliopeDb } from './client.ts';
 import { makeConnectorRepository } from './repositories/connector.ts';
+import { makeAutonomyRepository } from './repositories/autonomy.ts';
+import { makeConfirmationRepository } from './repositories/confirmation.ts';
 import { makeEstimateRepository } from './repositories/estimate.ts';
 import { makePlanRepository } from './repositories/plan.ts';
 import { makePriorityRepository } from './repositories/priority.ts';
@@ -8,6 +10,8 @@ import { makeSprintRepository } from './repositories/sprint.ts';
 import { makeVelocityRepository } from './repositories/velocity.ts';
 
 export type { ConnectorHealth, ConnectorStateInput } from './repositories/connector.ts';
+export type { ConfirmedPlanApplyInput } from './repositories/autonomy.ts';
+export type { ConfirmationInput, ConfirmationKind, ConfirmationStatus } from './repositories/confirmation.ts';
 export type { EstimateSource, TaskEstimateInput } from './repositories/estimate.ts';
 export type { NewPlan, NewPlanEntry, RescheduleLogInput } from './repositories/plan.ts';
 export type { PriorityInput, PriorityScope } from './repositories/priority.ts';
@@ -24,6 +28,8 @@ export type { NewVelocity, VelocityFilter } from './repositories/velocity.ts';
 
 export function makeRepository(db: CalliopeDb) {
   return {
+    ...makeAutonomyRepository(db),
+    ...makeConfirmationRepository(db),
     ...makeConnectorRepository(db),
     ...makeEstimateRepository(db),
     ...makePlanRepository(db),
