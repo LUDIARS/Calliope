@@ -1,5 +1,5 @@
 import { relations } from 'drizzle-orm';
-import { integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { index, integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
 export const plan = sqliteTable('plan', {
   id: text('id').primaryKey(),
@@ -10,21 +10,24 @@ export const plan = sqliteTable('plan', {
   velocitySnapshot: text('velocity_snapshot', { mode: 'json' }).$type<unknown>().notNull(),
   createdAt: text('created_at').notNull(),
   supersededBy: text('superseded_by'),
-});
+}, (table) => [
+  index('idx_plan_status').on(table.status),
+]);
 
 export const planEntry = sqliteTable('plan_entry', {
   id: text('id').primaryKey(),
-  planId: text('plan_id').notNull().references(() => plan.id),
-  // 正規形 `actio:<taskId>` / `actio-pm:<projectId>/<externalId>`(DESIGN §3)
+  planId: text('plan_id').notNull().references(() => plan.id, { onDelete: 'cascade' }),
   taskRef: text('task_ref').notNull(),
-  startAt: text('start_at').notNull(),
-  endAt: text('end_at').notNull(),
+  startAt: text('start_at'),
+  endAt: text('end_at'),
   lane: text('lane').notNull(),
   seq: integer('seq').notNull(),
   schedulaEventId: text('schedula_event_id'),
   confidence: real('confidence').notNull(),
   isHumanGate: integer('is_human_gate', { mode: 'boolean' }).notNull().default(false),
-});
+}, (table) => [
+  index('idx_plan_entry_plan').on(table.planId),
+]);
 
 export const sprint = sqliteTable('sprint', {
   id: text('id').primaryKey(),
@@ -40,7 +43,6 @@ export const sprint = sqliteTable('sprint', {
 export const sprintTask = sqliteTable('sprint_task', {
   id: text('id').primaryKey(),
   sprintId: text('sprint_id').notNull().references(() => sprint.id),
-  // 正規形 `actio:<taskId>` / `actio-pm:<projectId>/<externalId>`(DESIGN §3)
   taskRef: text('task_ref').notNull(),
   statusHistory: text('status_history', { mode: 'json' }).$type<unknown>().notNull(),
 });
@@ -56,7 +58,10 @@ export const velocity = sqliteTable('velocity', {
   distribution: text('distribution', { mode: 'json' }).$type<unknown>().notNull(),
   sampleSize: integer('sample_size').notNull(),
   source: text('source').notNull(),
-});
+}, (table) => [
+  uniqueIndex('uq_velocity_window').on(table.projectRef, table.category, table.windowStart, table.windowEnd),
+  index('idx_velocity_latest').on(table.projectRef, table.category, table.windowEnd),
+]);
 
 export const taskEstimate = sqliteTable('task_estimate', {
   taskRef: text('task_ref').primaryKey(),
@@ -82,8 +87,11 @@ export const priority = sqliteTable('priority', {
   ref: text('ref').notNull(),
   resolvedScore: real('resolved_score').notNull(),
   breakdown: text('breakdown', { mode: 'json' }).$type<unknown>().notNull(),
+  firstReadyAt: text('first_ready_at'),
   updatedAt: text('updated_at').notNull(),
-});
+}, (table) => [
+  uniqueIndex('uq_priority_scope_ref').on(table.scope, table.ref),
+]);
 
 export const curveSnapshot = sqliteTable('curve_snapshot', {
   id: text('id').primaryKey(),
@@ -97,7 +105,6 @@ export const curveSnapshot = sqliteTable('curve_snapshot', {
 
 export const calendarLink = sqliteTable('calendar_link', {
   id: text('id').primaryKey(),
-  // 'primary' エイリアス or Schedula 発行の参照 id。Google の生カレンダー ID(email になりうる)は保存しない。
   calendarRef: text('calendar_ref').notNull(),
   syncDirection: text('sync_direction', { enum: ['read', 'write', 'both'] }).notNull(),
   enabled: integer('enabled', { mode: 'boolean' }).notNull().default(true),

@@ -1,4 +1,9 @@
 import { makeHttp } from './http.ts';
+import {
+  actioTasksResponseSchema,
+  pmProjectsResponseSchema,
+  pmTasksResponseSchema,
+} from './contracts.ts';
 
 export interface ActioClientOptions {
   baseUrl: string;
@@ -10,9 +15,11 @@ export function makeActioClient(opts: ActioClientOptions) {
 
   return {
     health: () => http.get<unknown>('/api/health'),
-    listTasks: () => http.get<unknown>('/api/tasks'),
-    listPmProjects: () => http.get<unknown>('/api/pm/projects'),
-    listPmTasks: (projectId: string) => http.get<unknown>(`/api/pm/projects/${encodeURIComponent(projectId)}/tasks`),
+    listTasks: async () => actioTasksResponseSchema.parse(await http.get<unknown>('/api/tasks')).tasks,
+    listPmProjects: async () => pmProjectsResponseSchema.parse(await http.get<unknown>('/api/pm/projects')).projects,
+    listPmTasks: async (projectId: string) => pmTasksResponseSchema.parse(
+      await http.get<unknown>(`/api/pm/projects/${encodeURIComponent(projectId)}/tasks`),
+    ).tasks,
     getGompertz: (projectId: string) =>
       http.get<unknown>(`/api/pm/projects/${encodeURIComponent(projectId)}/analytics/gompertz`),
     getCriticalPath: (projectId: string) =>

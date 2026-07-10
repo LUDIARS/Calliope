@@ -1,6 +1,3 @@
-// 環境変数の解決。Excubitor 起動時の別名(_API_URL / _URL)を firstEnv で吸収する。
-// 秘密は持たず、上流 URL と service token(Bearer)を env から受け取るだけ。
-
 export interface UpstreamConfig {
   baseUrl: string | null;
   token: string | null;
@@ -10,6 +7,8 @@ export interface CalliopeConfig {
   port: number;
   dbPath: string;
   agentLanes: number;
+  serviceToken: string | null;
+  llmEstimation: boolean;
   actio: UpstreamConfig;
   schedula: UpstreamConfig;
   memoria: UpstreamConfig;
@@ -19,19 +18,28 @@ export interface CalliopeConfig {
 }
 
 function firstEnv(...keys: string[]): string | null {
-  for (const k of keys) {
-    const v = process.env[k];
-    if (v !== undefined && v !== '') return v;
+  for (const key of keys) {
+    const value = process.env[key];
+    if (value !== undefined && value !== '') return value;
   }
   return null;
 }
 
+function positiveInteger(value: string | undefined, fallback: number, name: string): number {
+  const parsed = Number(value ?? fallback);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    throw new Error(`${name} must be a positive integer`);
+  }
+  return parsed;
+}
+
 export function loadConfig(): CalliopeConfig {
   return {
-    // ポート正本は Excubitor catalog。8891 は暫定既定。
-    port: Number(process.env.CALLIOPE_PORT ?? 8891),
+    port: positiveInteger(process.env.CALLIOPE_PORT, 8891, 'CALLIOPE_PORT'),
     dbPath: process.env.CALLIOPE_DB_PATH ?? './data/calliope.db',
-    agentLanes: Number(process.env.CALLIOPE_AGENT_LANES ?? 3),
+    agentLanes: positiveInteger(process.env.CALLIOPE_AGENT_LANES, 3, 'CALLIOPE_AGENT_LANES'),
+    serviceToken: firstEnv('CALLIOPE_SERVICE_TOKEN'),
+    llmEstimation: process.env.CALLIOPE_LLM_ESTIMATION !== 'off',
     actio: {
       baseUrl: firstEnv('ACTIO_BASE_URL', 'ACTIO_API_URL', 'ACTIO_URL'),
       token: firstEnv('ACTIO_TOKEN'),

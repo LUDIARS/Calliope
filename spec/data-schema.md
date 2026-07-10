@@ -1,0 +1,25 @@
+# Calliope データスキーマ
+
+Calliope は計画成果物だけをローカル SQLite に保持する。タスク・目標・予定・個人属性の正本は上流サービスであり、本文や個人データを複製しない。
+
+| データ | 種類 | 権威ソース | 保存先 | 保護要否 | 保護方法 |
+|---|---|---|---|---|---|
+| plan / plan_entry | user | Calliope | SQLite | 要 | service tokenでAPIを保護。task_refのみ保存し、タイトル・氏名・emailを保存しない |
+| sprint / sprint_task | user | Calliope | SQLite | 要 | task_refのみ。状態履歴は計画情報に限定 |
+| velocity / task_estimate | user | Calliope | SQLite | 要 | project/category/task_refと集計値のみ。agent prompt/logを保存しない |
+| priority | user | Calliope | SQLite | 要 | project/goal/task ref、合成値、first_ready_atのみ。上流本文を保存しない |
+| reschedule_log | user | Calliope | SQLite | 要 | plan差分は参照・計画枠のみに限定し、API認証下で提供 |
+| curve_snapshot | user | Calliope | SQLite | 要 | sprint参照と集計曲線のみ |
+| connector_state | master | Calliope | SQLite | 不要 | service名・health・cursorのみ。tokenやerror本文を保存しない |
+| calendar_link | user | Schedula | SQLite参照 | 要 | calendar_refは primary aliasまたはSchedula参照IDのみ。生Google calendar ID/emailを保存しない |
+| task / goal | master | Actio | 非保存（task_ref参照のみ） | 要 | Bearer付きread。Calliope DBへ本文を複製しない |
+| event / personal event | user | Schedula | 非保存（freeBusyへ一時変換） | 要 | 時刻区間だけをメモリ上で合成し、個人属性を保存しない |
+| roadmap / agent_runs | user | Memoria | 非保存（集計入力のみ） | 要 | importanceと実行時間だけを集計し、path/prompt/log/summaryを保存しない |
+| service token / upstream token | secret | Cernere / 実行環境 | DB非保存 | 要 | env注入。ソース・ログ・error本文へ出さない |
+
+## 保持と更新
+
+- plan は破壊更新せず、active切替時に旧planを superseded として保持する。
+- velocity は同一の project_ref/category/window_start/window_end の再計算だけを置換し、window世代を保持する。
+- priority.first_ready_at は初回ready時刻を保持し、再計算で上書きしない。
+- 個人データの削除・opt-outは各正本サービスが担い、Calliopeには削除対象となる個人属性を置かない。

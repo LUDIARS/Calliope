@@ -11,6 +11,8 @@ function config(overrides: Partial<CalliopeConfig> = {}): CalliopeConfig {
     port: 0,
     dbPath: ':memory:',
     agentLanes: 3,
+    serviceToken: null,
+    llmEstimation: false,
     actio: { baseUrl: null, token: null },
     schedula: { baseUrl: null, token: null },
     memoria: { baseUrl: null, token: null },

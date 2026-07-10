@@ -27,7 +27,7 @@ Actio(タスク/PM) と Schedula(予定/カレンダー) と Memoria(roadmap/goa
 ## 開発
 
 ```sh
-npm install
+npm install --include=dev
 cp .env.example .env      # 上流 URL/token を設定
 npm run db:generate        # drizzle migration 生成
 npm run db:migrate         # 適用
@@ -36,6 +36,22 @@ npm run typecheck
 npm test
 ```
 
+## P1 API
+
+| Method | Path | 概要 |
+|---|---|---|
+| POST | /api/estimates/refresh | human→analogy→LLMで未見積りを補完 |
+| GET | /api/estimates | task_ref別または全見積り |
+| POST | /api/velocity/refresh | 28日velocity + 週次精度を再集計 |
+| GET | /api/velocity / /api/velocity/accuracy | 最新velocity / source別精度 |
+| POST | /api/priority/refresh | roadmap・goal/task・締切・agingを再解決 |
+| GET | /api/priority | scope/refで優先度を取得 |
+| POST | /api/plan/generate | DAG×Cレーンでdraft planを生成 |
+| GET | /api/plan / /api/plan/:id | plan一覧 / entries込み詳細 |
+| POST | /api/plan/:id/apply | draftをactive化し旧activeをsupersede |
+
+CALLIOPE_SERVICE_TOKEN 設定時は全 /api/* にBearerが必要。/health は公開。
+
 ## 技術スタック
 
 Hono + TypeScript(ESM/NodeNext) + tsx / Drizzle ORM + better-sqlite3(自DB) / vitest。
@@ -43,7 +59,7 @@ Hono + TypeScript(ESM/NodeNext) + tsx / Drizzle ORM + better-sqlite3(自DB) / vi
 
 ## 状態
 
-設計 v0.2 完了 / 実装 P0 着手前(Codex 委託予定)。実装フェーズは [`docs/CODEX-P0.md`](docs/CODEX-P0.md)。
+設計 v0.2 / P0基盤 / P1計画生成中核を実装済み。実装仕様は docs/CODEX-P0.md / docs/CODEX-P1.md。
 
 ## セットアップ TODO (運用)
 

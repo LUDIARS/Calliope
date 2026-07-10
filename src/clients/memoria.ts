@@ -1,4 +1,5 @@
 import { makeHttp } from './http.ts';
+import { agentRunsResponseSchema, roadmapsResponseSchema } from './contracts.ts';
 
 export interface MemoriaClientOptions {
   baseUrl: string;
@@ -25,14 +26,17 @@ export function makeMemoriaClient(opts: MemoriaClientOptions) {
 
   return {
     health: () => http.get<unknown>('/api/health'),
-    getRoadmaps: (month?: string) => http.get<unknown>(`/api/roadmaps${query({ month })}`),
+    getRoadmaps: async (month?: string) => roadmapsResponseSchema.parse(
+      await http.get<unknown>(`/api/roadmaps${query({ month })}`),
+    ),
     getGoalEvals: (month?: string) => http.get<unknown>(`/api/goal-evals${query({ month })}`),
-    listAgentRuns: (params: AgentRunQuery = {}) =>
-      http.get<unknown>(`/api/agent-runs${query({
+    listAgentRuns: async (params: AgentRunQuery = {}) => agentRunsResponseSchema.parse(
+      await http.get<unknown>(`/api/agent-runs${query({
         task_id: params.taskId,
         project_id: params.projectId,
         limit: params.limit,
       })}`),
+    ).items,
   };
 }
 
