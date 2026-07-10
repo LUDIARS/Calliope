@@ -1,7 +1,10 @@
 import { makeHttp } from './http.ts';
 import {
   actioTasksResponseSchema,
+  criticalPathSchema,
+  gompertzReportSchema,
   pmProjectsResponseSchema,
+  pmTaskHistoryResponseSchema,
   pmTasksResponseSchema,
 } from './contracts.ts';
 
@@ -20,10 +23,15 @@ export function makeActioClient(opts: ActioClientOptions) {
     listPmTasks: async (projectId: string) => pmTasksResponseSchema.parse(
       await http.get<unknown>(`/api/pm/projects/${encodeURIComponent(projectId)}/tasks`),
     ).tasks,
-    getGompertz: (projectId: string) =>
-      http.get<unknown>(`/api/pm/projects/${encodeURIComponent(projectId)}/analytics/gompertz`),
-    getCriticalPath: (projectId: string) =>
-      http.get<unknown>(`/api/pm/projects/${encodeURIComponent(projectId)}/analytics/critical-path`),
+    listPmTaskHistory: async (taskId: string) => pmTaskHistoryResponseSchema.parse(
+      await http.get<unknown>(`/api/pm/tasks/${encodeURIComponent(taskId)}/history`),
+    ).history,
+    getGompertz: async (projectId: string) => gompertzReportSchema.parse(
+      await http.get<unknown>(`/api/pm/projects/${encodeURIComponent(projectId)}/analytics/gompertz`),
+    ),
+    getCriticalPath: async (projectId: string) => criticalPathSchema.parse(
+      await http.get<unknown>(`/api/pm/projects/${encodeURIComponent(projectId)}/analytics/critical-path`),
+    ),
   };
 }
 

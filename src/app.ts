@@ -10,6 +10,8 @@ import { mountEstimateRoutes } from './routes/estimates.ts';
 import { mountHealthRoutes } from './routes/health.ts';
 import { mountPlanRoutes } from './routes/plan.ts';
 import { mountPriorityRoutes } from './routes/priority.ts';
+import { mountRiskRoutes } from './routes/risk.ts';
+import { mountSprintRoutes } from './routes/sprint.ts';
 import { mountUpstreamRoutes } from './routes/upstreams.ts';
 import { mountVelocityRoutes } from './routes/velocity.ts';
 
@@ -37,6 +39,8 @@ export function createApp(config: CalliopeConfig, deps: CreateAppDeps = {}) {
   mountEstimateRoutes(app, { config, clients, repo });
   mountPriorityRoutes(app, { clients, repo });
   mountPlanRoutes(app, { config, clients, repo });
+  mountSprintRoutes(app, { config, clients, repo });
+  mountRiskRoutes(app, { clients, repo });
 
   return app;
 }

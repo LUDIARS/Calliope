@@ -3,12 +3,23 @@ import { makeConnectorRepository } from './repositories/connector.ts';
 import { makeEstimateRepository } from './repositories/estimate.ts';
 import { makePlanRepository } from './repositories/plan.ts';
 import { makePriorityRepository } from './repositories/priority.ts';
+import { makeRiskRepository } from './repositories/risk.ts';
+import { makeSprintRepository } from './repositories/sprint.ts';
 import { makeVelocityRepository } from './repositories/velocity.ts';
 
 export type { ConnectorHealth, ConnectorStateInput } from './repositories/connector.ts';
 export type { EstimateSource, TaskEstimateInput } from './repositories/estimate.ts';
 export type { NewPlan, NewPlanEntry, RescheduleLogInput } from './repositories/plan.ts';
 export type { PriorityInput, PriorityScope } from './repositories/priority.ts';
+export type { GoalRiskLevel, GoalRiskSnapshotInput } from './repositories/risk.ts';
+export type {
+  CurveSnapshotInput,
+  NewSprint,
+  NewSprintTask,
+  SprintStatus,
+  SprintTaskStateInput,
+  SprintTaskStatus,
+} from './repositories/sprint.ts';
 export type { NewVelocity, VelocityFilter } from './repositories/velocity.ts';
 
 export function makeRepository(db: CalliopeDb) {
@@ -17,6 +28,8 @@ export function makeRepository(db: CalliopeDb) {
     ...makeEstimateRepository(db),
     ...makePlanRepository(db),
     ...makePriorityRepository(db),
+    ...makeRiskRepository(db),
+    ...makeSprintRepository(db),
     ...makeVelocityRepository(db),
   };
 }

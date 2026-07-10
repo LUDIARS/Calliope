@@ -97,7 +97,7 @@ task/goal 参照は正規文字列形 **`actio:<taskId>` / `actio-pm:<projectId>
 
 `POST /api/plan/generate` `POST /api/plan/:id/apply` `GET /api/plan` /
 `POST /api/reschedule/trigger` `GET /api/reschedule/log` /
-`GET/POST /api/sprint` `POST /api/sprint/:id/replan` / `GET /api/velocity` /
+`GET/POST /api/sprint` `POST /api/sprint/:id/{activate,replan,close}` / `GET /api/risk` `POST /api/risk/refresh` / `GET /api/velocity` /
 `GET /api/confirmations` `POST /api/confirmations/:id` /
 `POST /api/calendar/sync` / `GET /health`。破壊操作は Cernere session/WS。
 

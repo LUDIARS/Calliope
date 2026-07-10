@@ -6,6 +6,7 @@ import { isCompletedStatus, loadPlanningTasks } from '../planning/tasks.ts';
 import { topologicalSort } from './dag.ts';
 import { listFreeSlots } from './freebusy.ts';
 import { listSchedule, type SchedulableTask } from './listSchedule.ts';
+import { velocityConfidence } from '../velocity/distribution.ts';
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const PRIORITY_MAX_AGE_MS = MS_PER_DAY;
@@ -26,12 +27,6 @@ export interface SchedulerEngineDeps {
   id?: () => string;
 }
 
-interface VelocityDistribution {
-  p25?: number;
-  p50?: number;
-  p75?: number;
-}
-
 function velocityKey(projectRef: string, category: string): string {
   return `${projectRef}\u0000${category}`;
 }
@@ -49,15 +44,7 @@ function findVelocity<T extends { projectRef: string; category: string }>(
 }
 
 function entryConfidence(row: { sampleSize: number; distribution: unknown } | null): number {
-  if (!row) return 0.2;
-  const distribution = row.distribution as VelocityDistribution;
-  const p25 = distribution.p25;
-  const p50 = distribution.p50;
-  const p75 = distribution.p75;
-  if (p25 === undefined || p50 === undefined || p75 === undefined || p50 <= 0) return 0.2;
-  const sampleConfidence = row.sampleSize / (row.sampleSize + 5);
-  const spreadPenalty = 1 - Math.min((p75 - p25) / p50, 1);
-  return sampleConfidence * spreadPenalty;
+  return row ? velocityConfidence(row.sampleSize, row.distribution) : 0.2;
 }
 
 function selectGoalTasks<T extends { taskRef: string; category: string; kind: string }>(

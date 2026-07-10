@@ -47,6 +47,46 @@ export const actioTasksResponseSchema = z.object({ tasks: z.array(actioTaskSchem
 export const pmProjectsResponseSchema = z.object({ projects: z.array(pmProjectSchema) });
 export const pmTasksResponseSchema = z.object({ tasks: z.array(pmTaskSchema) });
 
+export const pmTaskSnapshotSchema = z.object({
+  id: z.string().min(1),
+  taskId: z.string().min(1),
+  changeType: z.enum(['created', 'updated', 'closed', 'reopened']),
+  changedFields: z.record(z.string(), z.unknown()).default({}),
+  snapshotData: z.record(z.string(), z.unknown()).default({}),
+  detectedAt: z.string().datetime({ offset: true }),
+});
+
+export const pmTaskHistoryResponseSchema = z.object({ history: z.array(pmTaskSnapshotSchema) });
+
+export const gompertzReportSchema = z.object({
+  projectId: z.string().min(1),
+  generatedAt: z.string().datetime({ offset: true }),
+  totalBugsFound: z.number().int().nonnegative(),
+  totalBugsFixed: z.number().int().nonnegative(),
+  estimatedTotalBugs: z.number().nonnegative(),
+  convergenceDate: z.string().date().nullable(),
+  confidenceLevel: z.number().min(0).max(1),
+  dataPoints: z.array(z.object({
+    date: z.string().date(),
+    cumulativeFound: z.number().int().nonnegative(),
+    cumulativeFixed: z.number().int().nonnegative(),
+    predicted: z.number().nonnegative(),
+  })),
+});
+
+export const criticalPathSchema = z.object({
+  path: z.array(z.object({
+    taskId: z.string().min(1),
+    title: z.string(),
+    estimatedDays: z.number().nonnegative(),
+    assignee: z.string(),
+    status: z.string(),
+  })),
+  totalEstimatedDays: z.number().nonnegative(),
+  projectedCompletionDate: z.string().date(),
+  riskLevel: z.enum(['low', 'medium', 'high', 'critical']),
+});
+
 export const agentRunSchema = z.object({
   id: z.coerce.string().min(1),
   task_id: z.union([z.string(), z.number().transform(String)]).nullable(),
@@ -71,6 +111,17 @@ const roadmapLineSchema = z.object({
 });
 
 export const roadmapsResponseSchema = z.object({ lines: z.array(roadmapLineSchema) });
+
+export const goalEvalSchema = z.object({
+  id: z.coerce.number().int().nonnegative(),
+  goal_id: z.union([z.string(), z.number().transform(String)]),
+  date: z.string().date(),
+  status: z.enum(['todo', 'doing', 'done']),
+  evaluated_at: z.string().min(1),
+  goal_title: z.string().nullable(),
+});
+
+export const goalEvalsResponseSchema = z.array(goalEvalSchema);
 
 export const schedulaEventsResponseSchema = z.object({
   events: z.array(z.object({
@@ -99,8 +150,12 @@ export const personalEventsResponseSchema = z.object({
 export type ActioTask = z.infer<typeof actioTaskSchema>;
 export type PmProject = z.infer<typeof pmProjectSchema>;
 export type PmTask = z.infer<typeof pmTaskSchema>;
+export type PmTaskSnapshot = z.infer<typeof pmTaskSnapshotSchema>;
+export type GompertzReport = z.infer<typeof gompertzReportSchema>;
+export type CriticalPath = z.infer<typeof criticalPathSchema>;
 export type AgentRun = z.infer<typeof agentRunSchema>;
 export type Roadmaps = z.infer<typeof roadmapsResponseSchema>;
+export type GoalEval = z.infer<typeof goalEvalSchema>;
 
 export interface BusyEvent {
   start: string;

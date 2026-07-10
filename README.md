@@ -52,6 +52,18 @@ npm test
 
 CALLIOPE_SERVICE_TOKEN 設定時は全 /api/* にBearerが必要。/health は公開。
 
+## P2 API
+
+| Method | Path | 概要 |
+|---|---|---|
+| POST | /api/sprint | velocityからbug/inflow予約を控除してplanned sprintを設計 |
+| GET | /api/sprint / /api/sprint/:id | sprint一覧 / task・curve込み詳細 |
+| POST | /api/sprint/:id/activate | plannedをactive化（projectごとに1件） |
+| POST | /api/sprint/:id/replan | 日次burndown・health・scope/期間/容量案・riskを更新 |
+| POST | /api/sprint/:id/close | 次plannedを先に生成し、activeをcloseしてcarryoverを返す |
+| POST | /api/risk/refresh | critical-path×velocity信頼帯でgoal riskを日次更新 |
+| GET | /api/risk | goal_ref/levelでRisk Registerを取得 |
+
 ## 技術スタック
 
 Hono + TypeScript(ESM/NodeNext) + tsx / Drizzle ORM + better-sqlite3(自DB) / vitest。
@@ -59,7 +71,8 @@ Hono + TypeScript(ESM/NodeNext) + tsx / Drizzle ORM + better-sqlite3(自DB) / vi
 
 ## 状態
 
-設計 v0.2 / P0基盤 / P1計画生成中核を実装済み。実装仕様は docs/CODEX-P0.md / docs/CODEX-P1.md。
+設計 v0.2 / P0基盤 / P1計画生成中核 / P2能力C・Risk Registerを実装済み。
+実装仕様は docs/CODEX-P0.md / docs/CODEX-P1.md / docs/CODEX-P2.md。
 
 ## セットアップ TODO (運用)
 

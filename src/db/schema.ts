@@ -1,4 +1,4 @@
-import { relations } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 import { index, integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
 export const plan = sqliteTable('plan', {
@@ -38,14 +38,28 @@ export const sprint = sqliteTable('sprint', {
   targetVelocity: real('target_velocity').notNull(),
   gompertzSnapshot: text('gompertz_snapshot', { mode: 'json' }).$type<unknown>().notNull(),
   status: text('status', { enum: ['planned', 'active', 'closed'] }).notNull().default('planned'),
-});
+  createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+  closedAt: text('closed_at'),
+}, (table) => [
+  index('idx_sprint_project_status').on(table.projectRef, table.status),
+  index('idx_sprint_period').on(table.periodStart, table.periodEnd),
+]);
 
 export const sprintTask = sqliteTable('sprint_task', {
   id: text('id').primaryKey(),
-  sprintId: text('sprint_id').notNull().references(() => sprint.id),
+  sprintId: text('sprint_id').notNull().references(() => sprint.id, { onDelete: 'cascade' }),
   taskRef: text('task_ref').notNull(),
+  effortMinutes: integer('effort_minutes').notNull().default(0),
+  priorityScore: real('priority_score').notNull().default(0),
+  status: text('status', { enum: ['committed', 'completed', 'removed'] }).notNull().default('committed'),
   statusHistory: text('status_history', { mode: 'json' }).$type<unknown>().notNull(),
-});
+  committedAt: text('committed_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+  completedAt: text('completed_at'),
+}, (table) => [
+  uniqueIndex('uq_sprint_task').on(table.sprintId, table.taskRef),
+  index('idx_sprint_task_status').on(table.sprintId, table.status),
+]);
 
 export const velocity = sqliteTable('velocity', {
   id: text('id').primaryKey(),
@@ -95,13 +109,31 @@ export const priority = sqliteTable('priority', {
 
 export const curveSnapshot = sqliteTable('curve_snapshot', {
   id: text('id').primaryKey(),
-  sprintId: text('sprint_id').notNull().references(() => sprint.id),
+  sprintId: text('sprint_id').notNull().references(() => sprint.id, { onDelete: 'cascade' }),
   date: text('date').notNull(),
   gompertzParams: text('gompertz_params', { mode: 'json' }).$type<unknown>().notNull(),
   inflowLambda: real('inflow_lambda').notNull(),
   burndownActual: real('burndown_actual').notNull(),
   burndownPlanned: real('burndown_planned').notNull(),
-});
+  createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+  uniqueIndex('uq_curve_snapshot_day').on(table.sprintId, table.date),
+  index('idx_curve_snapshot_sprint').on(table.sprintId, table.date),
+]);
+
+export const goalRiskSnapshot = sqliteTable('goal_risk_snapshot', {
+  id: text('id').primaryKey(),
+  goalRef: text('goal_ref').notNull(),
+  date: text('date').notNull(),
+  projectedCompletion: text('projected_completion').notNull(),
+  deadline: text('deadline').notNull(),
+  level: text('level', { enum: ['green', 'amber', 'red'] }).notNull(),
+  factors: text('factors', { mode: 'json' }).$type<unknown>().notNull(),
+  createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+  uniqueIndex('uq_goal_risk_snapshot_day').on(table.goalRef, table.date),
+  index('idx_goal_risk_latest').on(table.goalRef, table.date),
+]);
 
 export const calendarLink = sqliteTable('calendar_link', {
   id: text('id').primaryKey(),

@@ -13,10 +13,24 @@ function fixtureFor(url: string): unknown {
   if (url.endsWith('/api/tasks')) return { tasks: [] };
   if (url.endsWith('/api/pm/projects')) return { projects: [] };
   if (/\/api\/pm\/projects\/[^/]+\/tasks$/.test(url)) return { tasks: [] };
+  if (/\/api\/pm\/tasks\/[^/]+\/history$/.test(url)) return { history: [] };
+  if (url.endsWith('/analytics/gompertz')) {
+    return {
+      projectId: 'project 1', generatedAt: '2026-07-10T00:00:00.000Z',
+      totalBugsFound: 0, totalBugsFixed: 0, estimatedTotalBugs: 0,
+      convergenceDate: null, confidenceLevel: 0, dataPoints: [],
+    };
+  }
+  if (url.endsWith('/analytics/critical-path')) {
+    return {
+      path: [], totalEstimatedDays: 0, projectedCompletionDate: '2026-07-10', riskLevel: 'low',
+    };
+  }
   if (url.includes('/api/events')) return { events: [] };
   if (url.includes('/api/calendar/events')) return { events: [], connected: true };
   if (url.endsWith('/api/calendar/personal')) return { events: [] };
   if (url.includes('/api/roadmaps')) return { lines: [] };
+  if (url.includes('/api/goal-evals')) return [];
   if (url.includes('/api/agent-runs')) return { items: [] };
   return { ok: true };
 }
@@ -35,6 +49,7 @@ describe('upstream connectors', () => {
     await client.listTasks();
     await client.listPmProjects();
     await client.listPmTasks('project 1');
+    await client.listPmTaskHistory('task 1');
     await client.getGompertz('project 1');
     await client.getCriticalPath('project 1');
 
@@ -42,6 +57,7 @@ describe('upstream connectors', () => {
       'http://actio.test/api/tasks',
       'http://actio.test/api/pm/projects',
       'http://actio.test/api/pm/projects/project%201/tasks',
+      'http://actio.test/api/pm/tasks/task%201/history',
       'http://actio.test/api/pm/projects/project%201/analytics/gompertz',
       'http://actio.test/api/pm/projects/project%201/analytics/critical-path',
     ]);
