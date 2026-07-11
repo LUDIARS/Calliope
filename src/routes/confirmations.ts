@@ -5,6 +5,8 @@ import type { CalliopeClients } from '../clients/index.ts';
 import type { CalliopeConfig } from '../config.ts';
 import type { CalliopeRepository, ConfirmationStatus } from '../db/repository.ts';
 import { makeRescheduleEngine } from '../reschedule/engine.ts';
+import { CalendarPrerequisiteError, makeCalendarEngine } from '../calendar/engine.ts';
+import { upstreamFailure } from './errors.ts';
 
 const decisionSchema = z.object({
   decision: z.enum(['approve', 'reject']),
@@ -20,6 +22,7 @@ const reschedulePayloadSchema = z.object({
   beforePlanId: z.string().min(1),
   afterPlanId: z.string().min(1),
 });
+const calendarPayloadSchema = z.object({ planId: z.string().min(1) });
 
 export interface ConfirmationRoutesDeps {
   config: CalliopeConfig;
@@ -29,6 +32,7 @@ export interface ConfirmationRoutesDeps {
 
 export function mountConfirmationRoutes(app: Hono, deps: ConfirmationRoutesDeps) {
   const reschedule = makeRescheduleEngine(deps);
+  const calendar = makeCalendarEngine(deps);
 
   app.get('/api/confirmations', async (c) => {
     const status = c.req.query('status');
@@ -49,6 +53,9 @@ export function mountConfirmationRoutes(app: Hono, deps: ConfirmationRoutesDeps)
     const now = new Date();
     if (row.expiresAt <= now.toISOString()) {
       await deps.repo.expireConfirmation(id, now.toISOString(), '24h expiry');
+      if (row.kind === 'calendar_write') {
+        return c.json({ error: 'confirmation_expired' }, 409);
+      }
       const reproposal = await reschedule.trigger({ trigger: 'confirmation_expired', refresh: false });
       return c.json({ error: 'confirmation_expired', reproposal }, 409);
     }
@@ -56,6 +63,25 @@ export function mountConfirmationRoutes(app: Hono, deps: ConfirmationRoutesDeps)
       return c.json({ confirmation: await deps.repo.rejectConfirmation(
         id, parsed.data.decidedBy, parsed.data.reason ?? '', now.toISOString(),
       ) });
+    }
+    if (row.kind === 'calendar_write') {
+      const payload = calendarPayloadSchema.safeParse(row.payload);
+      if (!payload.success) return c.json({ error: 'invalid_confirmation_payload' }, 500);
+      try {
+        const result = await calendar.syncPlan(payload.data.planId);
+        const confirmation = await deps.repo.approveExternalConfirmation(
+          id, parsed.data.decidedBy, now.toISOString(), result,
+        );
+        return c.json({ confirmation, result });
+      } catch (error) {
+        if (error instanceof CalendarPrerequisiteError) {
+          return c.json({ error: 'calendar_prerequisites_missing', missing: error.missing }, 400);
+        }
+        const message = error instanceof Error ? error.message : '';
+        if (message.startsWith('plan not found:')) return c.json({ error: 'plan_not_found' }, 404);
+        if (message.startsWith('plan is not active:')) return c.json({ error: 'plan_not_active' }, 409);
+        return upstreamFailure(error);
+      }
     }
     if (row.kind !== 'reschedule' && row.kind !== 'plan_apply') {
       return c.json({ error: 'unsupported_confirmation_kind', kind: row.kind }, 409);
@@ -71,7 +97,11 @@ export function mountConfirmationRoutes(app: Hono, deps: ConfirmationRoutesDeps)
         decidedBy: parsed.data.decidedBy,
         logId: randomUUID(),
       });
-      return c.json({ confirmation: await deps.repo.getConfirmation(id), result });
+      return c.json({
+        confirmation: await deps.repo.getConfirmation(id),
+        result,
+        calendar: await calendar.requestSync(result.plan.id),
+      });
     } catch (error) {
       const message = error instanceof Error ? error.message : '';
       if (message.startsWith('confirmation stale:') || message.startsWith('confirmation target unavailable:') ||

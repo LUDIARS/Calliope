@@ -9,6 +9,7 @@ import { makeSprintEngine } from '../sprint/engine.ts';
 import { makeVelocityEngine } from '../velocity/engine.ts';
 import { comparePlans } from './diff.ts';
 import { assessRescheduleRisk } from './risk.ts';
+import { makeCalendarEngine } from '../calendar/engine.ts';
 
 const CONFIRMATION_TTL_MS = 24 * 60 * 60 * 1000;
 
@@ -108,8 +109,10 @@ export function makeRescheduleEngine(deps: RescheduleEngineDeps) {
           createdAt: now.toISOString(),
           outcome: 'applied',
         });
+        const calendar = await makeCalendarEngine(deps).requestSync(applied.plan.id);
         return {
           outcome: 'applied' as const, plan: applied.plan, diff, risk,
+          calendar,
           notificationStatus: 'not_sent_missing_authenticated_project_context',
         };
       }

@@ -64,6 +64,17 @@ CALLIOPE_SERVICE_TOKEN 設定時は全 /api/* にBearerが必要。/health は�
 | POST | /api/risk/refresh | critical-path×velocity信頼帯でgoal riskを日次更新 |
 | GET | /api/risk | goal_ref/levelでRisk Registerを取得 |
 
+## P4 Calendar API
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET/PUT | `/api/calendar/link` | Read or configure the opaque Schedula calendar binding |
+| POST | `/api/calendar/sync` | Request plan visualization; confirmation is required unless auto-write is explicitly enabled |
+| POST | `/api/calendar/pull` | Trigger Schedula's incremental Google pull sync |
+
+`CALLIOPE_CALENDAR_AUTO_WRITE=on` permits automatic writes only for plan visualization blocks.
+Every generated event carries `extendedProperties.private.calliope=<plan_entry_id>` to prevent pull loops.
+
 ## P3.5 Daily Briefing API
 
 | Method | Path | Purpose |

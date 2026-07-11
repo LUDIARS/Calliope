@@ -9,6 +9,7 @@ import { apiAuth } from './routes/auth.ts';
 import { mountEstimateRoutes } from './routes/estimates.ts';
 import { mountConfirmationRoutes } from './routes/confirmations.ts';
 import { mountBriefingRoutes } from './routes/briefing.ts';
+import { mountCalendarRoutes } from './routes/calendar.ts';
 import { mountHealthRoutes } from './routes/health.ts';
 import { mountPlanRoutes } from './routes/plan.ts';
 import { mountPriorityRoutes } from './routes/priority.ts';
@@ -49,6 +50,7 @@ export function createApp(config: CalliopeConfig, deps: CreateAppDeps = {}) {
   mountRescheduleRoutes(app, { config, clients, repo });
   mountConfirmationRoutes(app, { config, clients, repo });
   mountBriefingRoutes(app, { clients, repo });
+  mountCalendarRoutes(app, { config, clients, repo });
 
   return app;
 }

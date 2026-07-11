@@ -4,6 +4,10 @@ import {
   personalEventsResponseSchema,
   schedulaEventsResponseSchema,
   type BusyEvent,
+  freeBusyResponseSchema,
+  calendarEventResponseSchema,
+  calendarDeleteResponseSchema,
+  calendarSyncResponseSchema,
 } from './contracts.ts';
 
 export interface SchedulaClientOptions {
@@ -17,9 +21,6 @@ export interface EventRange {
   maxResults?: number;
 }
 
-const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
-
 function query(params: Record<string, string | number | undefined>) {
   const qs = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
@@ -27,38 +28,6 @@ function query(params: Record<string, string | number | undefined>) {
   }
   const value = qs.toString();
   return value ? `?${value}` : '';
-}
-
-function minutesFromMidnight(time: string): number {
-  const [hour, minute] = time.split(':').map(Number);
-  return (hour ?? 0) * 60 + (minute ?? 0);
-}
-
-function expandPersonalEvents(
-  events: Array<{ day: number; startTime: string | null; endTime: string | null; duration: number }>,
-  range: { from: string; to: string },
-): BusyEvent[] {
-  const from = new Date(range.from).getTime();
-  const to = new Date(range.to).getTime();
-  let localDay = Math.floor((from + JST_OFFSET_MS) / MS_PER_DAY);
-  const expanded: BusyEvent[] = [];
-  while (localDay * MS_PER_DAY - JST_OFFSET_MS < to) {
-    const localCalendarDate = new Date(localDay * MS_PER_DAY);
-    const mondayBasedDay = (localCalendarDate.getUTCDay() + 6) % 7;
-    const dayStart = localDay * MS_PER_DAY - JST_OFFSET_MS;
-    for (const event of events) {
-      if (mondayBasedDay !== event.day || !event.startTime) continue;
-      const start = dayStart + minutesFromMidnight(event.startTime) * 60_000;
-      const end = event.endTime
-        ? dayStart + minutesFromMidnight(event.endTime) * 60_000
-        : start + event.duration * 60 * 60 * 1000;
-      if (end > from && start < to) {
-        expanded.push({ start: new Date(start).toISOString(), end: new Date(end).toISOString() });
-      }
-    }
-    localDay += 1;
-  }
-  return expanded;
 }
 
 export function makeSchedulaClient(opts: SchedulaClientOptions) {
@@ -80,17 +49,38 @@ export function makeSchedulaClient(opts: SchedulaClientOptions) {
       await http.get<unknown>('/api/calendar/personal'),
     ).events,
     getCalendarStatus: () => http.get<unknown>('/api/calendar/status'),
-    async freeBusy(range: { from: string; to: string }): Promise<BusyEvent[]> {
-      const [events, personalEvents] = await Promise.all([
-        schedulaEventsResponseSchema.parse(
-          await http.get<unknown>(`/api/events${query({ from: range.from, to: range.to })}`),
-        ).events,
-        personalEventsResponseSchema.parse(await http.get<unknown>('/api/calendar/personal')).events,
-      ]);
-      return [
-        ...events.map((event) => ({ start: event.startTime, end: event.endTime })),
-        ...expandPersonalEvents(personalEvents, range),
-      ];
+    async freeBusy(range: { from: string; to: string }) {
+      return freeBusyResponseSchema.parse(await http.get<unknown>(`/api/calendar/freebusy${query({
+        timeMin: range.from, timeMax: range.to,
+      })}`));
+    },
+    async createCalendarEvent(input: {
+      summary: string;
+      description?: string;
+      start: { dateTime: string };
+      end: { dateTime: string };
+      extendedProperties: { private: Record<string, string> };
+    }) {
+      return calendarEventResponseSchema.parse(await http.post<unknown>('/api/calendar/events', input)).event;
+    },
+    async patchCalendarEvent(id: string, input: {
+      summary: string;
+      description?: string;
+      start: { dateTime: string };
+      end: { dateTime: string };
+      extendedProperties: { private: Record<string, string> };
+    }) {
+      return calendarEventResponseSchema.parse(await http.patch<unknown>(
+        `/api/calendar/events/${encodeURIComponent(id)}`, input,
+      )).event;
+    },
+    async deleteCalendarEvent(id: string) {
+      return calendarDeleteResponseSchema.parse(await http.del<unknown>(
+        `/api/calendar/events/${encodeURIComponent(id)}`,
+      ));
+    },
+    async pullCalendar() {
+      return calendarSyncResponseSchema.parse(await http.post<unknown>('/api/calendar/sync'));
     },
   };
 }

@@ -20,6 +20,7 @@ Calliope の品質基準は「上流を二重実装せず、同じ入力から�
 | integration | plan lifecycle | generate→draft→apply→active→旧active supersede、reschedule_log transaction |
 | integration | sprint lifecycle / risk | create→activate→goal_eval取込→replan→curve/risk upsert→close→next planned、red遷移通知要求 |
 | integration | P3 autonomy | low-risk auto apply、高リスク409→approve、reject reason、expiry/stale、What-if無書込 |
+| integration | P4 calendar | freeBusy contract、calendar_write confirmation、opaque tag、event ID persistence、supersede reuse、explicit degrade |
 | migration | SQLite | 0000〜最新の初回適用と再適用、nullable/新カラムの実schema |
 
 ## 重要経路

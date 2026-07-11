@@ -28,6 +28,7 @@ function testDb(): CalliopeDb {
     CREATE TABLE priority (id TEXT PRIMARY KEY, scope TEXT NOT NULL, ref TEXT NOT NULL, resolved_score REAL NOT NULL, breakdown TEXT NOT NULL, first_ready_at TEXT, updated_at TEXT NOT NULL);
     CREATE TABLE reschedule_log (id TEXT PRIMARY KEY, trigger TEXT NOT NULL, before TEXT NOT NULL, after TEXT NOT NULL, applied_by TEXT NOT NULL, reason TEXT NOT NULL, created_at TEXT NOT NULL, outcome TEXT NOT NULL DEFAULT 'applied', confirmation_id TEXT);
     CREATE TABLE confirmation (id TEXT PRIMARY KEY, kind TEXT NOT NULL, payload TEXT NOT NULL, status TEXT NOT NULL, created_at TEXT NOT NULL, expires_at TEXT NOT NULL, decided_at TEXT, decided_by TEXT, decision_reason TEXT);
+    CREATE TABLE calendar_link (id TEXT PRIMARY KEY, calendar_ref TEXT NOT NULL, sync_direction TEXT NOT NULL, enabled INTEGER NOT NULL, updated_at TEXT NOT NULL);
   `);
   return drizzle(sqlite, { schema });
 }

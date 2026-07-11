@@ -115,20 +115,23 @@ describe('upstream connectors', () => {
 });
 
 describe('Schedula freeBusy', () => {
-  it('projects Monday personal events into absolute JST intervals', async () => {
-    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-      const url = String(input);
-      if (url.includes('/api/events')) return Response.json({ events: [] });
-      return Response.json({
-        events: [{ day: 0, startTime: '09:00', endTime: '10:00', duration: 1 }],
-      });
-    });
+  it('uses the aggregate P4 freeBusy contract', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json({
+      busy: [{ start: '2026-07-13T00:00:00.000Z', end: '2026-07-13T01:00:00.000Z' }],
+      connected: false,
+      warnings: ['google_calendar_not_connected'],
+    }));
     const client = makeSchedulaClient({ baseUrl: 'http://schedula.test', token: null });
     await expect(client.freeBusy({
       from: '2026-07-13T00:00:00.000Z',
       to: '2026-07-14T00:00:00.000Z',
-    })).resolves.toEqual([
-      { start: '2026-07-13T00:00:00.000Z', end: '2026-07-13T01:00:00.000Z' },
-    ]);
+    })).resolves.toEqual({
+      busy: [{ start: '2026-07-13T00:00:00.000Z', end: '2026-07-13T01:00:00.000Z' }],
+      connected: false,
+      warnings: ['google_calendar_not_connected'],
+    });
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      'http://schedula.test/api/calendar/freebusy?timeMin=2026-07-13T00%3A00%3A00.000Z&timeMax=2026-07-14T00%3A00%3A00.000Z',
+    );
   });
 });

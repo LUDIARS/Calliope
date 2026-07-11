@@ -58,6 +58,7 @@ function testDb(): CalliopeDb {
       applied_by TEXT NOT NULL, reason TEXT NOT NULL, created_at TEXT NOT NULL,
       outcome TEXT NOT NULL DEFAULT 'applied', confirmation_id TEXT
     );
+    CREATE TABLE calendar_link (id TEXT PRIMARY KEY, calendar_ref TEXT NOT NULL, sync_direction TEXT NOT NULL, enabled INTEGER NOT NULL, updated_at TEXT NOT NULL);
   `);
   return drizzle(sqlite, { schema });
 }

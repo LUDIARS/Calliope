@@ -7,6 +7,7 @@ import { topologicalSort } from './dag.ts';
 import { listFreeSlots } from './freebusy.ts';
 import { listSchedule, type SchedulableTask } from './listSchedule.ts';
 import { velocityConfidence } from '../velocity/distribution.ts';
+import { makeCalendarEngine } from '../calendar/engine.ts';
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const PRIORITY_MAX_AGE_MS = MS_PER_DAY;
@@ -152,8 +153,11 @@ export function makeSchedulerEngine(deps: SchedulerEngineDeps) {
 
       let humanFreeSlots = null;
       if (deps.clients.schedula) {
-        const busy = await deps.clients.schedula.freeBusy({ from: start.toISOString(), to: end.toISOString() });
-        humanFreeSlots = listFreeSlots(busy, { from: start.toISOString(), to: end.toISOString() });
+        const availability = await deps.clients.schedula.freeBusy({
+          from: start.toISOString(), to: end.toISOString(),
+        });
+        humanFreeSlots = listFreeSlots(availability.busy, { from: start.toISOString(), to: end.toISOString() });
+        warnings.messages.push(...availability.warnings.map((warning) => `schedula: ${warning}`));
       } else {
         warnings.messages.push('schedula_unconfigured: human gates left pending');
       }
@@ -208,13 +212,14 @@ export function makeSchedulerEngine(deps: SchedulerEngineDeps) {
 
     async apply(planId: string) {
       const now = deps.now?.() ?? new Date();
-      return deps.repo.applyPlan(planId, {
+      const applied = await deps.repo.applyPlan(planId, {
         id: (deps.id ?? randomUUID)(),
         trigger: 'manual_apply',
         appliedBy: 'human',
         reason: 'P1 manual plan activation',
         createdAt: now.toISOString(),
       });
+      return { ...applied, calendar: await makeCalendarEngine(deps).requestSync(applied.plan.id) };
     },
   };
 }

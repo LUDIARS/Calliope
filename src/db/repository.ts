@@ -8,6 +8,7 @@ import { makePriorityRepository } from './repositories/priority.ts';
 import { makeRiskRepository } from './repositories/risk.ts';
 import { makeSprintRepository } from './repositories/sprint.ts';
 import { makeVelocityRepository } from './repositories/velocity.ts';
+import { makeCalendarRepository } from './repositories/calendar.ts';
 
 export type { ConnectorHealth, ConnectorStateInput } from './repositories/connector.ts';
 export type { ConfirmedPlanApplyInput } from './repositories/autonomy.ts';
@@ -25,9 +26,11 @@ export type {
   SprintTaskStatus,
 } from './repositories/sprint.ts';
 export type { NewVelocity, VelocityFilter } from './repositories/velocity.ts';
+export type { CalendarLinkInput } from './repositories/calendar.ts';
 
 export function makeRepository(db: CalliopeDb) {
   return {
+    ...makeCalendarRepository(db),
     ...makeAutonomyRepository(db),
     ...makeConfirmationRepository(db),
     ...makeConnectorRepository(db),

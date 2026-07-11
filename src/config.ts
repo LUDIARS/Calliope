@@ -10,6 +10,7 @@ export interface CalliopeConfig {
   serviceToken: string | null;
   llmEstimation: boolean;
   dailyOrchestration?: boolean;
+  calendarAutoWrite?: boolean;
   actio: UpstreamConfig;
   schedula: UpstreamConfig;
   memoria: UpstreamConfig;
@@ -43,6 +44,7 @@ export function loadConfig(): CalliopeConfig {
     serviceToken: firstEnv('CALLIOPE_SERVICE_TOKEN'),
     llmEstimation: process.env.CALLIOPE_LLM_ESTIMATION !== 'off',
     dailyOrchestration: process.env.CALLIOPE_DAILY_ORCHESTRATION !== 'off',
+    calendarAutoWrite: process.env.CALLIOPE_CALENDAR_AUTO_WRITE === 'on',
     actio: {
       baseUrl: firstEnv('ACTIO_BASE_URL', 'ACTIO_API_URL', 'ACTIO_URL'),
       token: firstEnv('ACTIO_TOKEN'),

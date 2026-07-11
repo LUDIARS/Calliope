@@ -60,6 +60,22 @@ export function makeConfirmationRepository(db: CalliopeDb) {
       });
     },
 
+    async approveExternalConfirmation(id: string, decidedBy: string, decidedAt: string, result: unknown) {
+      return db.transaction((tx) => {
+        const row = tx.select().from(confirmation).where(eq(confirmation.id, id)).get();
+        if (!row) throw new Error(`confirmation not found: ${id}`);
+        if (row.status !== 'pending') throw new Error(`confirmation is not pending: ${id}`);
+        if (row.expiresAt <= decidedAt) throw new Error(`confirmation expired: ${id}`);
+        const payload = row.payload && typeof row.payload === 'object'
+          ? { ...row.payload, result }
+          : { request: row.payload, result };
+        tx.update(confirmation).set({
+          status: 'approved', decidedAt, decidedBy, payload,
+        }).where(eq(confirmation.id, id)).run();
+        return { ...row, status: 'approved' as const, decidedAt, decidedBy, payload };
+      });
+    },
+
     async expireConfirmation(id: string, decidedAt: string, reason: string) {
       return db.transaction((tx) => {
         const row = tx.select().from(confirmation).where(eq(confirmation.id, id)).get();

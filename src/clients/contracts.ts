@@ -147,6 +147,27 @@ export const personalEventsResponseSchema = z.object({
   })),
 });
 
+export const freeBusyResponseSchema = z.object({
+  busy: z.array(z.object({
+    start: z.string().datetime({ offset: true }),
+    end: z.string().datetime({ offset: true }),
+  })),
+  connected: z.boolean(),
+  warnings: z.array(z.string()),
+});
+
+export const calendarEventResponseSchema = z.object({
+  event: z.object({ id: z.string().min(1) }).passthrough(),
+});
+
+export const calendarDeleteResponseSchema = z.object({ deleted: z.literal(true) });
+export const calendarSyncResponseSchema = z.object({
+  imported: z.number().int().nonnegative(),
+  removed: z.number().int().nonnegative(),
+  skipped: z.number().int().nonnegative(),
+  syncTokenReset: z.boolean(),
+});
+
 export type ActioTask = z.infer<typeof actioTaskSchema>;
 export type PmProject = z.infer<typeof pmProjectSchema>;
 export type PmTask = z.infer<typeof pmTaskSchema>;
