@@ -1,6 +1,6 @@
 import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../../app.ts';
 import type { CalliopeConfig } from '../../config.ts';
 import type { CalliopeDb } from '../../db/client.ts';
@@ -11,8 +11,14 @@ import { makeTaskRef } from '../../refs.ts';
 const openDatabases: Database.Database[] = [];
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.restoreAllMocks();
   for (const sqlite of openDatabases.splice(0)) sqlite.close();
+});
+
+beforeEach(() => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date('2026-07-10T12:00:00.000Z'));
 });
 
 function testDb(): CalliopeDb {

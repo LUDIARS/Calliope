@@ -64,6 +64,17 @@ CALLIOPE_SERVICE_TOKEN 設定時は全 /api/* にBearerが必要。/health は�
 | POST | /api/risk/refresh | critical-path×velocity信頼帯でgoal riskを日次更新 |
 | GET | /api/risk | goal_ref/levelでRisk Registerを取得 |
 
+## P3.5 Daily Briefing API
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/api/briefing/today` | Compose today's JST plan, decisions, alerts, deadlines, and human gates on demand |
+| POST | `/api/briefing/today/send` | Publish one aggregated briefing to the `calliope.daily` Nuntius topic |
+
+Set both `NUNTIUS_BASE_URL` and `NUNTIUS_TOKEN` (or `NUNTIUS_PROJECT_TOKEN`) to enable delivery.
+When Nuntius is not configured, composition remains available and send returns a warning with `status: skipped`.
+The 07:30 JST daily orchestration runs rescheduling first and then sends the same briefing representation.
+
 ## P3 API
 
 | Method | Path | 概要 |

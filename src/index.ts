@@ -6,6 +6,8 @@ import { openDb } from './db/client.ts';
 import { makeRepository } from './db/repository.ts';
 import { startDailyOrchestrator } from './orchestration/daily.ts';
 import { makeRescheduleEngine } from './reschedule/engine.ts';
+import { makeBriefingEngine } from './briefing/engine.ts';
+import { makeDailyLoop } from './orchestration/loop.ts';
 
 const config = loadConfig();
 if (!config.serviceToken) {
@@ -24,7 +26,10 @@ const server = serve({ fetch: app.fetch, port: config.port }, (info) => {
 
 const daily = config.dailyOrchestration !== false
   ? startDailyOrchestrator(
-    () => makeRescheduleEngine({ config, clients, repo }).trigger({ trigger: 'daily' }),
+    makeDailyLoop({
+      reschedule: () => makeRescheduleEngine({ config, clients, repo }).trigger({ trigger: 'daily' }),
+      briefing: () => makeBriefingEngine({ clients, repo }).sendToday(),
+    }),
     {
       onError: (error) => process.stderr.write(
         `[calliope] daily orchestration failed: ${error instanceof Error ? error.name : 'unknown'}\n`,

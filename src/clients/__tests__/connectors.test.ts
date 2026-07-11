@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { makeActioClient } from '../actio.ts';
 import { makeMemoriaClient } from '../memoria.ts';
 import { makeSchedulaClient } from '../schedula.ts';
+import { makeNuntiusClient } from '../nuntius.ts';
 
 type FetchCall = Parameters<typeof fetch>;
 
@@ -91,6 +92,25 @@ describe('upstream connectors', () => {
       'http://memoria.test/api/goal-evals?month=2026-07',
       'http://memoria.test/api/agent-runs?task_id=1&project_id=2&limit=3',
     ]);
+  });
+
+  it('publishes one aggregated briefing through the Nuntius topic contract', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json({
+      topic: 'calliope.daily', delivered: 1,
+      messages: [{ id: 'm1', userId: 'u1', channel: 'discord' }],
+    }));
+    const client = makeNuntiusClient({ baseUrl: 'http://nuntius.test', token: 'project-token' });
+    const briefing = {
+      date: '2026-07-11', generatedAt: '2026-07-10T23:00:00.000Z', planId: null,
+      todayPlan: [], decisions: [], alerts: [], upcomingDeadlines: [], humanGates: [],
+      summary: { tasks: 0, decisions: 0, alerts: 0, humanGates: 0 },
+    };
+    await expect(client.publishDailyBriefing(briefing)).resolves.toMatchObject({ delivered: 1 });
+    expect(fetchMock).toHaveBeenCalledWith('http://nuntius.test/api/topics/calliope.daily/publish', expect.objectContaining({
+      method: 'POST',
+      headers: expect.objectContaining({ authorization: 'Bearer project-token' }),
+      body: JSON.stringify({ payload: { kind: 'daily_briefing', briefing }, source: 'calliope.daily' }),
+    }));
   });
 });
 

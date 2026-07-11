@@ -15,6 +15,7 @@ export interface CalliopeConfig {
   memoria: UpstreamConfig;
   concordiaBaseUrl: string | null;
   nuntiusBaseUrl: string | null;
+  nuntiusToken?: string | null;
   claudeBin: string;
 }
 
@@ -56,6 +57,7 @@ export function loadConfig(): CalliopeConfig {
     },
     concordiaBaseUrl: firstEnv('CONCORDIA_BASE_URL', 'CONCORDIA_URL'),
     nuntiusBaseUrl: firstEnv('NUNTIUS_BASE_URL', 'NUNTIUS_URL'),
+    nuntiusToken: firstEnv('NUNTIUS_TOKEN', 'NUNTIUS_PROJECT_TOKEN'),
     claudeBin: process.env.CALLIOPE_CLAUDE_BIN ?? 'claude',
   };
 }
