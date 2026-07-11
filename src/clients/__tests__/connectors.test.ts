@@ -3,6 +3,7 @@ import { makeActioClient } from '../actio.ts';
 import { makeMemoriaClient } from '../memoria.ts';
 import { makeSchedulaClient } from '../schedula.ts';
 import { makeNuntiusClient } from '../nuntius.ts';
+import { composeWeeklyRetrospective } from '../../retrospective/compose.ts';
 
 type FetchCall = Parameters<typeof fetch>;
 
@@ -95,8 +96,9 @@ describe('upstream connectors', () => {
   });
 
   it('publishes one aggregated briefing through the Nuntius topic contract', async () => {
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json({
-      topic: 'calliope.daily', delivered: 1,
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => Response.json({
+      topic: String(input).includes('calliope.weekly') ? 'calliope.weekly' : 'calliope.daily',
+      delivered: 1,
       messages: [{ id: 'm1', userId: 'u1', channel: 'discord' }],
     }));
     const client = makeNuntiusClient({ baseUrl: 'http://nuntius.test', token: 'project-token' });
@@ -111,6 +113,18 @@ describe('upstream connectors', () => {
       headers: expect.objectContaining({ authorization: 'Bearer project-token' }),
       body: JSON.stringify({ payload: { kind: 'daily_briefing', briefing }, source: 'calliope.daily' }),
     }));
+    const retrospective = composeWeeklyRetrospective({
+      now: new Date('2026-07-15T00:00:00.000Z'), velocities: [], curves: [], priorities: [], logs: [],
+    });
+    await client.publishWeeklyRetrospective(retrospective);
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'http://nuntius.test/api/topics/calliope.weekly/publish',
+      expect.objectContaining({
+        body: JSON.stringify({
+          payload: { kind: 'weekly_retrospective', retrospective }, source: 'calliope.weekly',
+        }),
+      }),
+    );
   });
 });
 

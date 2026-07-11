@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { DailyBriefing } from '../briefing/compose.ts';
+import type { WeeklyRetrospective } from '../retrospective/compose.ts';
 import { makeHttp } from './http.ts';
 
 const publishResponseSchema = z.object({
@@ -14,13 +15,16 @@ const publishResponseSchema = z.object({
 
 export function makeNuntiusClient(options: { baseUrl: string; token: string }) {
   const http = makeHttp({ ...options, service: 'nuntius' });
+  async function publish(topic: string, kind: string, field: string, value: unknown) {
+    const response = await http.post<unknown>(`/api/topics/${topic}/publish`, {
+      payload: { kind, [field]: value },
+      source: topic,
+    });
+    return publishResponseSchema.parse(response);
+  }
   return {
-    async publishDailyBriefing(briefing: DailyBriefing) {
-      const response = await http.post<unknown>('/api/topics/calliope.daily/publish', {
-        payload: { kind: 'daily_briefing', briefing },
-        source: 'calliope.daily',
-      });
-      return publishResponseSchema.parse(response);
-    },
+    publishDailyBriefing: (briefing: DailyBriefing) => publish('calliope.daily', 'daily_briefing', 'briefing', briefing),
+    publishWeeklyRetrospective: (retrospective: WeeklyRetrospective) =>
+      publish('calliope.weekly', 'weekly_retrospective', 'retrospective', retrospective),
   };
 }

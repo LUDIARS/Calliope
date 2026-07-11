@@ -64,6 +64,17 @@ CALLIOPE_SERVICE_TOKEN 設定時は全 /api/* にBearerが必要。/health は�
 | POST | /api/risk/refresh | critical-path×velocity信頼帯でgoal riskを日次更新 |
 | GET | /api/risk | goal_ref/levelでRisk Registerを取得 |
 
+## P5 Dashboard / Weekly Retrospective
+
+Open `/` for the responsive command dashboard. It reads the existing plan, sprint, velocity, briefing, confirmation, calendar, and What-if APIs; the service token is kept in browser session storage only.
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/api/retrospective/weekly` | Aggregate velocity drift, scope creep, aging, estimation accuracy, and reschedule outcomes |
+| POST | `/api/retrospective/weekly/send` | Publish one report to the `calliope.weekly` Nuntius topic |
+
+The weekly report runs Monday at 08:00 JST by default. Set `CALLIOPE_WEEKLY_RETROSPECTIVE=off` to disable scheduling.
+
 ## P4 Calendar API
 
 | Method | Path | Purpose |

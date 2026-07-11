@@ -8,6 +8,8 @@ import { startDailyOrchestrator } from './orchestration/daily.ts';
 import { makeRescheduleEngine } from './reschedule/engine.ts';
 import { makeBriefingEngine } from './briefing/engine.ts';
 import { makeDailyLoop } from './orchestration/loop.ts';
+import { startWeeklyOrchestrator } from './orchestration/weekly.ts';
+import { makeRetrospectiveEngine } from './retrospective/engine.ts';
 
 const config = loadConfig();
 if (!config.serviceToken) {
@@ -38,8 +40,18 @@ const daily = config.dailyOrchestration !== false
   )
   : null;
 
+const weekly = config.weeklyRetrospective !== false
+  ? startWeeklyOrchestrator(
+    () => makeRetrospectiveEngine({ clients, repo }).sendWeekly(),
+    { onError: (error) => process.stderr.write(
+      `[calliope] weekly retrospective failed: ${error instanceof Error ? error.name : 'unknown'}\n`,
+    ) },
+  )
+  : null;
+
 function shutdown(): void {
   daily?.stop();
+  weekly?.stop();
   server.close(() => {
     db.$client.close();
     process.exit(0);

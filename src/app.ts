@@ -19,6 +19,8 @@ import { mountSprintRoutes } from './routes/sprint.ts';
 import { mountSimulateRoutes } from './routes/simulate.ts';
 import { mountUpstreamRoutes } from './routes/upstreams.ts';
 import { mountVelocityRoutes } from './routes/velocity.ts';
+import { mountRetrospectiveRoutes } from './routes/retrospective.ts';
+import { mountUiRoutes } from './routes/ui.ts';
 
 export interface CreateAppDeps {
   db?: ReturnType<typeof openDb>;
@@ -37,6 +39,7 @@ export function createApp(config: CalliopeConfig, deps: CreateAppDeps = {}) {
     allowHeaders: ['content-type', 'authorization'],
   }));
   app.use('/api/*', apiAuth(config.serviceToken));
+  mountUiRoutes(app);
 
   mountHealthRoutes(app, { config, clients, repo });
   mountUpstreamRoutes(app, { clients });
@@ -51,6 +54,7 @@ export function createApp(config: CalliopeConfig, deps: CreateAppDeps = {}) {
   mountConfirmationRoutes(app, { config, clients, repo });
   mountBriefingRoutes(app, { clients, repo });
   mountCalendarRoutes(app, { config, clients, repo });
+  mountRetrospectiveRoutes(app, { clients, repo });
 
   return app;
 }
