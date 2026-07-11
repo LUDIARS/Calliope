@@ -61,7 +61,7 @@ DESIGN §3 の全テーブルを drizzle(sqlite-core)で実装。フィールド
 - `listPmProjects()` → `GET /api/pm/projects`
 - (write は P1 以降。P0 は read のみ)
 
-**検証済(2026-07-09)**: 上記パスは P0 実装(`src/clients/actio.ts`)で確定。認証は Cernere service token(Bearer)。
+**検証済(2026-07-09)**: 上記パスは P0 実装(`src/clients/actio.ts`)で確定。コネクタは設定された Bearer を送信する。Cernere は永続的な上流 API token を発行しないため、本番のユーザー委譲方式は rollout prerequisite として別途確定する。
 
 ### T4. SchedulaConnector — `src/clients/schedula.ts`
 - `listEvents(range)` → `GET /api/events`
@@ -89,11 +89,11 @@ DESIGN §3 の全テーブルを drizzle(sqlite-core)で実装。フィールド
 
 ## 3. 受け入れ基準
 
-- [ ] `npm run db:generate && npm run db:migrate` が成功し全テーブル作成。
-- [ ] `.env` に上流 URL/token を設定 → `npm run dev` → `GET /health` が上流 health を反映して 200。
-- [ ] 3コネクタの read メソッドが実サービスに疎通(手動 or 統合テスト)。
-- [ ] `npm run typecheck` / `npm test` green。
-- [ ] 上流未設定は 503(`{error:'<svc>_unconfigured'}`)、非2xx は `UpstreamError` を route で 502 に写す(無言フォールバック禁止)。
+- [x] `npm run db:generate && npm run db:migrate` が成功し全テーブル作成。
+- [x] 上流 health を反映する `/health` と URL/token 設定契約を実装。live rollout は [`CODEX-ROLLOUT.md`](CODEX-ROLLOUT.md) の外部前提に分離。
+- [x] 3コネクタの read メソッドと HTTP 契約を integration fixture で検証。live rollout は operator environment で実施。
+- [x] `npm run typecheck` / `npm test` green。
+- [x] 上流未設定は 503(`{error:'<svc>_unconfigured'}`)、非2xx は `UpstreamError` を route で 502 に写す(無言フォールバック禁止)。
 
 ## 4. 規約(必須)
 

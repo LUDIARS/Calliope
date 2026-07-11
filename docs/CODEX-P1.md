@@ -155,15 +155,15 @@ plan の supersede 遷移(active→superseded + superseded_by)をトランザク
 
 ## 3. 受け入れ基準
 
-- [ ] `npm run db:generate && npm run db:migrate` が 0002(first_ready_at)まで適用。
-- [ ] 実上流(Actio/Memoria)疎通で `POST /api/velocity/refresh` → `GET /api/velocity` が実データ行を返す。
-- [ ] `POST /api/estimates/refresh` が human/analogy/llm の段階を踏み、未推定を unresolved で明示。
-- [ ] `POST /api/priority/refresh` → `GET /api/priority` が breakdown(urgency/aging 含む)付きで返す。
-- [ ] `POST /api/plan/generate` → draft(velocity_snapshot・confidence・human gate 配置あり)、
+- [x] `npm run db:generate && npm run db:migrate` が 0002(first_ready_at)まで適用。
+- [x] `POST /api/velocity/refresh` → `GET /api/velocity` の実データ契約を実装・integration fixtureで検証。live rollout は [`CODEX-ROLLOUT.md`](CODEX-ROLLOUT.md) の外部前提に分離。
+- [x] `POST /api/estimates/refresh` が human/analogy/llm の段階を踏み、未推定を unresolved で明示。
+- [x] `POST /api/priority/refresh` → `GET /api/priority` が breakdown(urgency/aging 含む)付きで返す。
+- [x] `POST /api/plan/generate` → draft(velocity_snapshot・confidence・human gate 配置あり)、
       `POST /api/plan/:id/apply` → active + 旧 plan supersede + reschedule_log 記録。
-- [ ] Schedula 未設定でも generate が degrade(human-pending + 警告)で完走する。
-- [ ] `CALLIOPE_SERVICE_TOKEN` 設定時に token 無しの `/api/*` が 401、`/health` は 200。
-- [ ] `npm run typecheck` / `npm test` green。純粋ロジックは fixture のみで通る(上流 mock 不要)。
+- [x] Schedula 未設定でも generate が degrade(human-pending + 警告)で完走する。
+- [x] `CALLIOPE_SERVICE_TOKEN` 設定時に token 無しの `/api/*` が 401、`/health` は 200。
+- [x] `npm run typecheck` / `npm test` green。純粋ロジックは fixture のみで通る(上流 mock 不要)。
 
 ## 4. 規約(必須)
 

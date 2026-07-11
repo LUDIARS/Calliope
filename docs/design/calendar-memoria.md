@@ -74,15 +74,15 @@ Calliope の前提として Schedula calendar を拡張する。**この拡張�
 | データ | 所在 | Calliope の参照 |
 |---|---|---|
 | task/goal スキーマ | Actio `tasks`(kind/creatorType/category 移植済) | ActioConnector read(正本) |
-| Memoria→Actio 共有 | `shareTaskToActio` が title/details/status/due_at のみ送信 | **要拡張(E.2)** |
+| Memoria→Actio 共有 | `shareTaskToActio` が title/details/status/due_at/kind/category/creator_type を送信 | **実装済み (Memoria PR #252)** |
 | goal_eval_logs(日次評価) | Memoria `goal_eval_logs` + eval-scheduler(毎朝7時) | MemoriaConnector read |
 | roadmap(事業ライン優先度) | Memoria `roadmap/aggregate.ts`(roadmap-* JSON集約) | MemoriaConnector read(§3 優先度) |
 | agent_runs(velocity元) | Memoria `agent_runs` | MemoriaConnector read(§2 velocity) |
 
 ### E.2 隙間埋め①: 共有 API の欠損補完
-現状 `shareTaskToActio` は **kind / category / creator_type を送っていない**。Actio を faithful な SoT にするため:
-- Memoria 側 `shareTaskToActio` に `kind` / `category` / `creator_type` を追加送信。
-- Actio 側 share 受け口が該当フィールドを受理・保存。
+`shareTaskToActio` は **kind / category / creator_type を保持する**。Actio を faithful な SoT にするため:
+- Memoria 側 `shareTaskToActio` が `kind` / `category` / `creator_type` を追加送信する (実装済み)。
+- Actio 側の既存 task API が該当フィールドを受理・保存する (実装済み)。
 - 効果: goal(kind=goal) と PJ カテゴリが Actio に流れ、Calliope が「目標」と「所属PJ」を Actio 単一ソースで読める。
 - **小修正(Actio + Memoria の各 PR)**。破壊なし・追記のみ。
 
@@ -107,7 +107,7 @@ Calliope の前提として Schedula calendar を拡張する。**この拡張�
 
 ### E.7 Codex フェーズ
 - **P0 内**: MemoriaConnector(read: agent_runs/roadmap/goal_eval), ActioConnector(read: tasks/goals) を Connector 基盤として実装。
-- **別 PR(Actio+Memoria)**: `shareTaskToActio` の kind/category/creator_type 拡張(E.2)。
+- **別 PR(Memoria)**: `shareTaskToActio` の kind/category/creator_type 拡張(E.2、PR #252で完了)。
 - **P1b**: roadmap → Priority モデル結線(E.4)。
 - **P2/P3**: goal_eval → sprint 健全性 / priority urgency 反映(E.3)。
 

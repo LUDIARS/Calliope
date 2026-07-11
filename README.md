@@ -118,9 +118,11 @@ Hono + TypeScript(ESM/NodeNext) + tsx / Drizzle ORM + better-sqlite3(自DB) / vi
 設計 v0.2 / P0基盤 / P1計画生成中核 / P2能力C・Risk Register / P3能力B・自律性を実装済み。
 実装仕様は docs/CODEX-P0.md / docs/CODEX-P1.md / docs/CODEX-P2.md / docs/CODEX-P3.md。
 
-## セットアップ TODO (運用)
+## Rollout status
 
-- [ ] Excubitor catalog に `calliope`(port 8891) を登録(ポート正本化)
-- [ ] Cernere に Calliope service 登録 + 上流(Actio/Schedula/Memoria)向け service token 発行
-- [ ] Schedula calendar モジュールの双方向化(OAuth consent + write-back)= 別リポ PR(能力D前提)
-- [ ] Memoria/Actio の `shareTaskToActio` 拡張(kind/category/creator_type)= 別リポ PR(能力E前提)
+- [x] Excubitor catalog registration on canonical port `8891` (Excubitor PR #72).
+- [x] Schedula Google Calendar OAuth, free/busy, incremental pull, and write-back (Schedula PR #11).
+- [x] Memoria `shareTaskToActio` preserves `kind`, `category`, and `creator_type`; Actio already accepts and stores them (Memoria PR #252).
+- [x] Cernere boundary audited. Cernere project credentials authenticate a service to Cernere's project WebSocket; they do not mint durable Actio, Schedula, or Memoria API tokens.
+
+Production identity binding remains an operator/product prerequisite, not an implementation checkbox. Cernere user-to-project tokens expire after 15 minutes and must remain memory-only, so they must not be copied into `ACTIO_TOKEN`, `SCHEDULA_TOKEN`, or `MEMORIA_TOKEN`. Local development may use the upstream services' development authentication behavior. A production deployment must first choose a user/delegation model that also works for Calliope's background schedules.

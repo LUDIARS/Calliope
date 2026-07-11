@@ -70,13 +70,13 @@ EstimationService の学習が効いているか・どの source が信頼でき
 - **API**: `GET /api/velocity/accuracy`。
 - **Phase**: **P1a に含める**(小)。
 
-## F6. コスト/トークン予算(保留提案)
+## F6. コスト/トークン予算(外部前提としてクローズ)
 
 **何**: agent_runs の実行コスト(トークン/金額)を PJ 別に集計し、decision-metrics の費用軸を計画に反映。
 予算超過 PJ への新規タスク投入をブリーフィングで警告する。
 
-- **前提確認が必要**: Memoria `agent_runs` にコスト列があるか未確認。無ければ Memoria 側 issue(Calliope では算出しない)。
-- **Phase**: **保留**(P6 と同時期に判断。前提が Memoria 側にあるため)。
+- **前提監査済み (2026-07-11)**: Memoria `agent_runs` にコスト/トークン列は無い。Calliope では推測・二重集計しない。
+- **Phase**: Calliope の実装対象外としてクローズ。Memoria が正本となるコスト契約を追加した時だけ、新しい明示タスクとして再評価する。
 
 ## F7. 週次振り返り(velocity レビュー)
 
@@ -98,7 +98,7 @@ EstimationService の学習が効いているか・どの source が信頼でき
 | 4 | **F3** What-if | P3 | comparePlan の流用のみ、新ロジックゼロ |
 | 5 | **F2** Daily Briefing | P3.5 | F1/F4 の出力が揃ってから 1 通に束ねる |
 | 6 | **F7** 週次振り返り | P5 | 集計のみ、急がない |
-| - | **F6** コスト予算 | 保留 | Memoria 側の前提確認が先 |
+| - | **F6** コスト予算 | 外部前提 | Memoria に正本データが無いため Calliope では実装しない |
 
 ## 自律性 / 規約整合
 
