@@ -3,6 +3,26 @@ import { z } from 'zod';
 const nullableIso = z.string().datetime({ offset: true }).nullable();
 const priority = z.enum(['low', 'medium', 'med', 'high', 'critical']);
 
+export const actioTaskStatusSchema = z.enum([
+  'open',
+  'in_progress',
+  'blocked',
+  'done',
+  'cancelled',
+]);
+export const actioTaskPrioritySchema = z.enum(['low', 'medium', 'high', 'critical']);
+
+export const actioCreateTaskInputSchema = z.object({
+  external_id: z.string().min(1),
+  title: z.string().min(1),
+  details: z.string().default(''),
+  status: actioTaskStatusSchema.default('open'),
+  due_at: nullableIso.default(null),
+  kind: z.enum(['task', 'goal']).default('task'),
+  category: z.string().nullable().default(null),
+  creator_type: z.literal('ai').default('ai'),
+});
+
 export const actioTaskSchema = z.object({
   id: z.string().min(1),
   title: z.string(),
@@ -44,6 +64,7 @@ export const pmTaskSchema = z.object({
 });
 
 export const actioTasksResponseSchema = z.object({ tasks: z.array(actioTaskSchema) });
+export const actioTaskResponseSchema = z.object({ task: actioTaskSchema });
 export const pmProjectsResponseSchema = z.object({ projects: z.array(pmProjectSchema) });
 export const pmTasksResponseSchema = z.object({ tasks: z.array(pmTaskSchema) });
 
@@ -169,6 +190,9 @@ export const calendarSyncResponseSchema = z.object({
 });
 
 export type ActioTask = z.infer<typeof actioTaskSchema>;
+export type ActioCreateTaskInput = z.input<typeof actioCreateTaskInputSchema>;
+export type ActioTaskStatus = z.infer<typeof actioTaskStatusSchema>;
+export type ActioTaskPriority = z.infer<typeof actioTaskPrioritySchema>;
 export type PmProject = z.infer<typeof pmProjectSchema>;
 export type PmTask = z.infer<typeof pmTaskSchema>;
 export type PmTaskSnapshot = z.infer<typeof pmTaskSnapshotSchema>;
