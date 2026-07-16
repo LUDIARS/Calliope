@@ -3,9 +3,9 @@ task: 05-<private-reference-004>-sprint-progress
 project: Calliope
 kind: 実装
 status: pending
-created: 2026-07-16
+created: 2026-07-16T00:00:00.000Z
 source_session: lictor-9747bcfe-3969-4e12-959d-6cf39d3287fc
-memoria_task_id: null
+memoria_task_id: 533
 actio_task_id: null
 memory_links:
   - E:/Document/Ars/Calliope/docs/design/<private-reference-004>-pm.md
