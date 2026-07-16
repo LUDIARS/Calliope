@@ -40,6 +40,17 @@
 
 → `<private-reference-004>/spec/tasks/2026-07-16-01-pm-task-source.md`(設計相談)。裁定は neco。
 
+**裁定結果 (2026-07-17, neco 承認)**: (1) タスク正本 = **Actio core tasks + group**
+(学生 PJ 1 件 = Actio group 1 件、<private-reference-004> `<private-reference-004>_project.actio_group_id` でリンク。
+Actio-SchoolModules は実態が Schedula カリキュラムプラグインのため対象外)。
+(2) velocity = **ハイブリッド** (E_t = 学生申告 + EstimationService 補完、velocity = 完了実績
+Θ_p、k_p 非適用で k=1 + 広信頼帯 + 暫定表示)。(3) 自律性 = **auto-apply 全面禁止 + 最初からリーダー裁量** — 承認ゲートの対象は
+**リスケ適用とプロジェクトスコープ判断**、承認者は**プロデューサー (PJ 単位ロール) と
+総合ディレクター (hub 全体ロール) のみ** (R3-1/R3-2 裁定)。名簿は <private-reference-004> 正本 → Actio group へ
+片方向同期 (R1-1)。依存関係/milestone は必要時に再設計相談 (R1-2、Actio スケジュール統合予定の
+文脈で)。Θ_p は週次 rolling + cold-start は申告合計容量 + 暫定表示 (R2-1)。実所要の自己申告は
+導入せず自動計算のみ (R2-2)。全裁定の詳細は同タスク md「裁定」節を参照。
+
 ## H2. <private-reference-004> 側 — projects プラグイン(レジストリ正本)
 
 - `plugins/projects/` 新設(CorpusModule 規約: `index.ts` + `panel.ts`、schema は

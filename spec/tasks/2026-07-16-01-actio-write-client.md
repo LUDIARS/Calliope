@@ -2,7 +2,9 @@
 task: 01-actio-write-client
 project: Calliope
 kind: 実装
-status: pending
+status: done
+delegation_run_id: a54bb3c1-e6b9-41de-a52a-661248f856e3
+pr_number: 13
 created: 2026-07-16T00:00:00.000Z
 source_session: lictor-9747bcfe-3969-4e12-959d-6cf39d3287fc
 memoria_task_id: 529
