@@ -40,16 +40,20 @@
 
 → `<private-reference-004>/spec/tasks/2026-07-16-01-pm-task-source.md`(設計相談)。裁定は neco。
 
-**裁定結果 (2026-07-17, neco 承認)**: (1) タスク正本 = **Actio core tasks + group**
-(学生 PJ 1 件 = Actio group 1 件、<private-reference-004> `<private-reference-004>_project.actio_group_id` でリンク。
-Actio-SchoolModules は実態が Schedula カリキュラムプラグインのため対象外)。
-(2) velocity = **ハイブリッド** (E_t = 学生申告 + EstimationService 補完、velocity = 完了実績
-Θ_p、k_p 非適用で k=1 + 広信頼帯 + 暫定表示)。(3) 自律性 = **auto-apply 全面禁止 + 最初からリーダー裁量** — 承認ゲートの対象は
-**リスケ適用とプロジェクトスコープ判断**、承認者は**プロデューサー (PJ 単位ロール) と
-総合ディレクター (hub 全体ロール) のみ** (R3-1/R3-2 裁定)。名簿は <private-reference-004> 正本 → Actio group へ
-片方向同期 (R1-1)。依存関係/milestone は必要時に再設計相談 (R1-2、Actio スケジュール統合予定の
-文脈で)。Θ_p は週次 rolling + cold-start は申告合計容量 + 暫定表示 (R2-1)。実所要の自己申告は
-導入せず自動計算のみ (R2-2)。全裁定の詳細は同タスク md「裁定」節を参照。
+**最終裁定 (2026-07-17, neco — 並行裁定の競合解決済み)**:
+(1) タスク正本 = **Actio コア `tasks` に `project_id` を新設** (group 代用しない)。値は
+<private-reference-004> `<private-reference-004>_project.id` の不透明参照で、PJ レジストリ正本は <private-reference-004> のまま・Actio 側に project
+マスタは作らない。Calliope の `<private-reference-004>:<project_id>` scope と一致。学生の操作は <private-reference-004> フロント
+簡易 UI で完結 (Actio UI は触らせない)。→ 派生: `Actio/spec/tasks/2026-07-17-01-<private-reference-004>-project-tasks.md`。
+(2) velocity = **申告 + 補完** (E_t = 学生申告 `estimated_minutes`、欠損は EstimationService
+補完。velocity = 完了実績 Θ_p 週次 rolling、k_p 非適用 = k=1 + 広信頼帯 + 暫定表示。
+cold-start は申告合計容量。実所要の自己申告は導入せず自動計算のみ)。
+(3) 自律性 = **auto-apply 全面禁止**。承認ゲートは**リスケ適用 + PJ スコープ判断のみ**、承認者は
+**プロデューサー (PJ 単位ロール) + 総合ディレクター (hub 全体ロール) のみ**。**学生の裁量あり**
+(自 PJ のタスク作成・編集・完了は <private-reference-004> 簡易 UI で自由)。承認経路は <private-reference-004> Web hub 限定
+(Cernere PASETO、Discord 承認不可)。依存関係/milestone は必要時に再設計相談
+(Actio スケジュール統合予定の文脈で)。全経緯は <private-reference-004> タスク md「最終裁定」節と
+<private-reference-004> `spec/faq/<private-reference-004>-pm-task-source.md` (PR #13) を参照。
 
 ## H2. <private-reference-004> 側 — projects プラグイン(レジストリ正本)
 

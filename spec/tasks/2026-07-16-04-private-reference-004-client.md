@@ -19,10 +19,13 @@ docs/design/<private-reference-004>-pm.md §H3 の実装。<private-reference-00
 `make<private-reference-004>Client` を追加し、<private-reference-004> project を Calliope の project scope (`<private-reference-004>:<project_id>`)
 として優先度解決・plan・sprint・risk に載せられるようにする。
 
-前提 (両方満たすまで着手しない。未充足なら pending のまま理由を報告する):
+前提 (すべて満たすまで着手しない。未充足なら pending のまま理由を報告する):
 1. <private-reference-004> 側 projects プラグイン (<private-reference-004>/spec/tasks/2026-07-16-02-projects-plugin.md) がマージ済みで
    read API が確定している。
-2. 設計相談 (<private-reference-004>/spec/tasks/2026-07-16-01-pm-task-source.md) の裁定が出ている。
+2. 設計相談は **2026-07-17 最終裁定済み**: タスク取得は Actio コア tasks の **project_id**
+   (値 = <private-reference-004> `<private-reference-004>_project.id`) で引く。group 経由ではない。
+3. Actio 側の project_id 新設 (Actio/spec/tasks/2026-07-17-01-<private-reference-004>-project-tasks.md) が
+   マージ済みで、外部 API から project_id 指定でタスクを read できる。
 
 ## 完了条件
 
