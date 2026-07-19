@@ -20,6 +20,8 @@ export interface CalliopeConfig {
   dailyOrchestration?: boolean;
   calendarAutoWrite?: boolean;
   weeklyRetrospective?: boolean;
+  /** docs/design/<private-reference-004>-pm.md H4: <private-reference-004> 学生 PJ 向け週次進捗レポート (calliope.<private-reference-004>.weekly) 配信。 */
+  <private-reference-004>WeeklyReport?: boolean;
   actio: UpstreamConfig;
   schedula: UpstreamConfig;
   memoria: UpstreamConfig;
@@ -57,6 +59,7 @@ export function loadConfig(): CalliopeConfig {
     dailyOrchestration: process.env.CALLIOPE_DAILY_ORCHESTRATION !== 'off',
     calendarAutoWrite: process.env.CALLIOPE_CALENDAR_AUTO_WRITE === 'on',
     weeklyRetrospective: process.env.CALLIOPE_WEEKLY_RETROSPECTIVE !== 'off',
+    <private-reference-004>WeeklyReport: process.env.CALLIOPE_<private-reference-004>_WEEKLY_REPORT !== 'off',
     actio: {
       baseUrl: firstEnv('ACTIO_BASE_URL', 'ACTIO_API_URL', 'ACTIO_URL'),
       token: firstEnv('ACTIO_TOKEN'),

@@ -10,6 +10,7 @@ import { makeBriefingEngine } from './briefing/engine.ts';
 import { makeDailyLoop } from './orchestration/loop.ts';
 import { startWeeklyOrchestrator } from './orchestration/weekly.ts';
 import { makeRetrospectiveEngine } from './retrospective/engine.ts';
+import { make<private-reference-004>WeeklyEngine } from './retrospective/<private-reference-004>-weekly.ts';
 
 const config = loadConfig();
 if (!config.serviceToken) {
@@ -49,9 +50,19 @@ const weekly = config.weeklyRetrospective !== false
   )
   : null;
 
+const <private-reference-004>Weekly = config.<private-reference-004>WeeklyReport !== false
+  ? startWeeklyOrchestrator(
+    () => make<private-reference-004>WeeklyEngine({ clients, repo }).sendWeekly(),
+    { onError: (error) => process.stderr.write(
+      `[calliope] <private-reference-004> weekly report failed: ${error instanceof Error ? error.name : 'unknown'}\n`,
+    ) },
+  )
+  : null;
+
 function shutdown(): void {
   daily?.stop();
   weekly?.stop();
+  <private-reference-004>Weekly?.stop();
   server.close(() => {
     db.$client.close();
     process.exit(0);

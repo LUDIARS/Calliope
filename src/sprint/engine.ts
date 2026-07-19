@@ -3,20 +3,17 @@ import type { PmTask, PmTaskSnapshot } from '../clients/contracts.ts';
 import type { CalliopeClients } from '../clients/index.ts';
 import type { CalliopeRepository } from '../db/repository.ts';
 import { isCompletedStatus } from '../planning/tasks.ts';
-import { makeTaskRef, parseTaskRef } from '../refs.ts';
+import { parseTaskRef } from '../refs.ts';
 import { parseVelocityDistribution } from '../velocity/distribution.ts';
-import { calculateSprintCapacity, type CapacityTask } from './capacity.ts';
+import { buildCandidates, taskRefForPmTask as taskRef } from './candidates.ts';
+import { calculateSprintCapacity } from './capacity.ts';
+import { SprintPrerequisiteError } from './errors.ts';
+import { design<private-reference-004>, replan<private-reference-004> } from './<private-reference-004>-engine.ts';
 import { calculateInflow, type InflowEvent } from './inflow.ts';
+import { resolveSprintProject } from './project.ts';
+import { average, daysBetween, DEFAULT_SPRINT_DAYS, goalProgressFromStatus, MS_PER_DAY } from './util.ts';
 
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
-const DEFAULT_SPRINT_DAYS = 14;
-
-export class SprintPrerequisiteError extends Error {
-  constructor(public missing: string[]) {
-    super(`sprint prerequisites missing: ${missing.join(', ')}`);
-    this.name = 'SprintPrerequisiteError';
-  }
-}
+export { SprintPrerequisiteError } from './errors.ts';
 
 export interface SprintEngineDeps {
   clients: CalliopeClients;
@@ -24,17 +21,6 @@ export interface SprintEngineDeps {
   agentLanes: number;
   now?: () => Date;
   id?: () => string;
-}
-
-interface SprintTaskCandidate extends CapacityTask {
-  sourceId: string;
-  sourceStatus: string;
-  labels: string[];
-  createdAt: string;
-}
-
-function taskRef(projectId: string, task: PmTask): string {
-  return makeTaskRef('actio-pm', projectId, task.externalId);
 }
 
 function findVelocity(
@@ -48,56 +34,6 @@ function findVelocity(
     rows.find((row) => row.projectRef === projectName) ??
     rows.find((row) => row.projectRef === '*' && row.category === '*') ??
     null;
-}
-
-function buildCandidates(
-  projectId: string,
-  tasks: PmTask[],
-  estimates: Array<{ taskRef: string; effortMinutes: number }>,
-  priorities: Array<{ ref: string; resolvedScore: number }>,
-) {
-  const estimatesByRef = new Map(estimates.map((row) => [row.taskRef, row.effortMinutes]));
-  const prioritiesByRef = new Map(priorities.map((row) => [row.ref, row.resolvedScore]));
-  const refs = new Map<string, string>();
-  const statusByIdentifier = new Map<string, string>();
-  for (const task of tasks) {
-    const ref = taskRef(projectId, task);
-    refs.set(task.id, ref);
-    refs.set(task.externalId, ref);
-    statusByIdentifier.set(task.id, task.status);
-    statusByIdentifier.set(task.externalId, task.status);
-  }
-  const missingEstimates: string[] = [];
-  const missingPriorities: string[] = [];
-  const candidates: SprintTaskCandidate[] = [];
-  for (const task of tasks) {
-    if (isCompletedStatus(task.status) || task.labels.some((label) => label.toLowerCase() === 'human-gate')) continue;
-    const ref = taskRef(projectId, task);
-    const effortMinutes = task.estimatedHours === null
-      ? estimatesByRef.get(ref) ?? null
-      : task.estimatedHours * 60;
-    if (effortMinutes === null || effortMinutes <= 0) {
-      missingEstimates.push(ref);
-      continue;
-    }
-    const priority = prioritiesByRef.get(ref);
-    if (priority === undefined) missingPriorities.push(ref);
-    const isReady = task.blockedBy.every((identifier) => {
-      const status = statusByIdentifier.get(identifier);
-      return status !== undefined && isCompletedStatus(status);
-    });
-    candidates.push({
-      taskRef: ref,
-      sourceId: task.id,
-      sourceStatus: task.status,
-      labels: task.labels,
-      createdAt: task.createdAt,
-      effortMinutes,
-      priority: priority ?? 0,
-      isReady,
-    });
-  }
-  return { candidates, missingEstimates, missingPriorities, refs };
 }
 
 function createdAtFromHistory(task: PmTask, history: PmTaskSnapshot[]): { createdAt: string; usedFallback: boolean } {
@@ -133,41 +69,11 @@ async function loadInflow(
   return { ...calculateInflow(events, { now }), fallbackCount };
 }
 
-function average(values: number[]): number {
-  return values.length === 0 ? 0 : values.reduce((sum, value) => sum + value, 0) / values.length;
-}
-
-function daysBetween(from: Date, to: Date): number {
-  return Math.max((to.getTime() - from.getTime()) / MS_PER_DAY, 0);
-}
-
-function goalProgressFromStatus(status: 'todo' | 'doing' | 'done'): number {
-  if (status === 'done') return 1;
-  if (status === 'doing') return 0.5;
-  return 0;
-}
-
 export function makeSprintEngine(deps: SprintEngineDeps) {
-  const getActio = () => {
-    if (!deps.clients.actio) throw new SprintPrerequisiteError(['actio']);
-    return deps.clients.actio;
-  };
-
-  async function loadProject(projectRef: string) {
-    const actio = getActio();
-    const projects = await actio.listPmProjects();
-    const project = projects.find((item) => item.id === projectRef || item.name === projectRef);
-    if (!project) throw new Error(`project not found: ${projectRef}`);
-    return { actio, project };
-  }
-
-  async function design(input: { projectRef: string; goalRef?: string; sprintDays?: number }) {
-    const sprintDays = input.sprintDays ?? DEFAULT_SPRINT_DAYS;
-    if (!Number.isInteger(sprintDays) || sprintDays < 1 || sprintDays > 28) {
-      throw new Error('sprintDays must be an integer between 1 and 28');
-    }
-    const now = deps.now?.() ?? new Date();
-    const { actio, project } = await loadProject(input.projectRef);
+  async function designPm(project: { id: string; name: string }, input: { goalRef?: string; sprintDays: number }, now: Date) {
+    const actio = deps.clients.actio;
+    if (!actio) throw new SprintPrerequisiteError(['actio']);
+    const { sprintDays } = input;
     const [tasks, gompertz, estimates, priorities, velocities] = await Promise.all([
       actio.listPmTasks(project.id),
       actio.getGompertz(project.id),
@@ -296,12 +202,27 @@ export function makeSprintEngine(deps: SprintEngineDeps) {
     };
   }
 
-  async function replan(sprintId: string) {
-    const existing = await deps.repo.getSprintWithTasks(sprintId);
-    if (!existing) throw new Error(`sprint not found: ${sprintId}`);
-    if (existing.status === 'closed') throw new Error(`sprint is closed: ${sprintId}`);
+  async function design(input: { projectRef: string; goalRef?: string; sprintDays?: number }) {
+    const sprintDays = input.sprintDays ?? DEFAULT_SPRINT_DAYS;
+    if (!Number.isInteger(sprintDays) || sprintDays < 1 || sprintDays > 28) {
+      throw new Error('sprintDays must be an integer between 1 and 28');
+    }
     const now = deps.now?.() ?? new Date();
-    const { actio, project } = await loadProject(existing.projectRef);
+    const handle = await resolveSprintProject(deps.clients, input.projectRef);
+    if (handle.scope === '<private-reference-004>') {
+      return design<private-reference-004>(deps, handle, { goalRef: input.goalRef, sprintDays }, now);
+    }
+    return designPm(handle, { goalRef: input.goalRef, sprintDays }, now);
+  }
+
+  async function replanPm(
+    project: { id: string; name: string },
+    existing: NonNullable<Awaited<ReturnType<CalliopeRepository['getSprintWithTasks']>>>,
+  ) {
+    const actio = deps.clients.actio;
+    if (!actio) throw new SprintPrerequisiteError(['actio']);
+    const sprintId = existing.id;
+    const now = deps.now?.() ?? new Date();
     const [tasks, gompertz, estimates, priorities, velocities, goalEvals] = await Promise.all([
       actio.listPmTasks(project.id),
       actio.getGompertz(project.id),
@@ -459,6 +380,15 @@ export function makeSprintEngine(deps: SprintEngineDeps) {
           : []),
       ],
     };
+  }
+
+  async function replan(sprintId: string) {
+    const existing = await deps.repo.getSprintWithTasks(sprintId);
+    if (!existing) throw new Error(`sprint not found: ${sprintId}`);
+    if (existing.status === 'closed') throw new Error(`sprint is closed: ${sprintId}`);
+    const handle = await resolveSprintProject(deps.clients, existing.projectRef);
+    if (handle.scope === '<private-reference-004>') return replan<private-reference-004>(deps, handle, existing);
+    return replanPm(handle, existing);
   }
 
   return {
