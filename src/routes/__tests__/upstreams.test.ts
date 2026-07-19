@@ -46,4 +46,36 @@ describe('upstream routes', () => {
       status: 500,
     });
   });
+
+  it('returns 503 <private-reference-004>_unconfigured when <private-reference-004> baseUrl is unset', async () => {
+    const app = createApp(config());
+    const res = await app.request('/api/upstreams/<private-reference-004>/projects');
+
+    expect(res.status).toBe(503);
+    await expect(res.json()).resolves.toMatchObject({ error: '<private-reference-004>_unconfigured' });
+  });
+
+  it('returns 503 <private-reference-004>_unconfigured when <private-reference-004> service token is unset (baseUrl alone is not enough)', async () => {
+    const app = createApp(config({ <private-reference-004>: { baseUrl: 'http://<private-reference-004>.test', token: null, serviceToken: null } }));
+    const res = await app.request('/api/upstreams/<private-reference-004>/projects');
+
+    expect(res.status).toBe(503);
+    await expect(res.json()).resolves.toMatchObject({ error: '<private-reference-004>_unconfigured' });
+  });
+
+  it('reaches the real <private-reference-004> external projects path once configured', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json({ projects: [] }));
+    const app = createApp(config({
+      <private-reference-004>: { baseUrl: 'http://<private-reference-004>.test', token: null, serviceToken: 'svc-token' },
+    }));
+
+    const res = await app.request('/api/upstreams/<private-reference-004>/projects');
+
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toEqual([]);
+    expect(fetchMock.mock.calls[0]?.[0]).toBe('http://<private-reference-004>.test/api/x/projects/external/projects');
+    expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({
+      headers: expect.objectContaining({ 'x-<private-reference-004>-service-token': 'svc-token' }),
+    });
+  });
 });

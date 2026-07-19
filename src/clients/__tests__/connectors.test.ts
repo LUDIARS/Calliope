@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { makeActioClient } from '../actio.ts';
+import { make<private-reference-004>Client } from '../<private-reference-004>.ts';
 import { makeMemoriaClient } from '../memoria.ts';
 import { makeSchedulaClient } from '../schedula.ts';
 import { makeNuntiusClient } from '../nuntius.ts';
@@ -147,5 +148,68 @@ describe('Schedula freeBusy', () => {
     expect(fetchMock.mock.calls[0]?.[0]).toBe(
       'http://schedula.test/api/calendar/freebusy?timeMin=2026-07-13T00%3A00%3A00.000Z&timeMax=2026-07-14T00%3A00%3A00.000Z',
     );
+  });
+});
+
+describe('<private-reference-004> client', () => {
+  const projectFixture = {
+    id: 'proj-1',
+    name: '<private-reference-006>',
+    description: null,
+    status: 'active' as const,
+    repoUrl: null,
+    createdAt: 1752900000000,
+    updatedAt: 1752900000000,
+    members: [
+      { userId: 'user-1', role: 'producer' as const, displayName: 'Producer One', createdAt: 1752900000000 },
+    ],
+  };
+
+  it('reaches the real external projects paths with Cernere bearer + service token headers', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.endsWith('/external/projects')) return Response.json({ projects: [projectFixture] });
+      if (url.endsWith('/external/projects/proj-1')) return Response.json({ project: projectFixture });
+      throw new Error(`unexpected url: ${url}`);
+    });
+    const client = make<private-reference-004>Client({
+      baseUrl: 'http://<private-reference-004>.test', token: 'cernere-bearer', serviceToken: 'svc-token',
+    });
+
+    await expect(client.listProjects()).resolves.toEqual([projectFixture]);
+    await expect(client.getProject('proj-1')).resolves.toEqual(projectFixture);
+    await expect(client.listMembers('proj-1')).resolves.toEqual(projectFixture.members);
+
+    expect(fetchMock.mock.calls.map((call: FetchCall) => call[0])).toEqual([
+      'http://<private-reference-004>.test/api/x/projects/external/projects',
+      'http://<private-reference-004>.test/api/x/projects/external/projects/proj-1',
+      'http://<private-reference-004>.test/api/x/projects/external/projects/proj-1',
+    ]);
+    for (const call of fetchMock.mock.calls) {
+      expect(call[1]).toMatchObject({
+        headers: expect.objectContaining({
+          'x-<private-reference-004>-service-token': 'svc-token',
+          authorization: 'Bearer cernere-bearer',
+        }),
+      });
+    }
+  });
+
+  it('encodes the project id in the path', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      Response.json({ project: { ...projectFixture, id: 'proj 1' } }),
+    );
+    const client = make<private-reference-004>Client({ baseUrl: 'http://<private-reference-004>.test', token: null, serviceToken: 'svc-token' });
+
+    await client.getProject('proj 1');
+
+    expect(fetchMock.mock.calls[0]?.[0]).toBe('http://<private-reference-004>.test/api/x/projects/external/projects/proj%201');
+  });
+
+  it('rejects a response that violates the fixture contract', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json({ projects: [{ id: 'p1' }] }));
+    const client = make<private-reference-004>Client({ baseUrl: 'http://<private-reference-004>.test', token: null, serviceToken: 'svc-token' });
+
+    await expect(client.listProjects()).rejects.toThrow();
   });
 });

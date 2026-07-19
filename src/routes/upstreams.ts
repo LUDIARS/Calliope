@@ -110,4 +110,28 @@ export function mountUpstreamRoutes(app: Hono, deps: UpstreamRoutesDeps) {
       return upstreamFailure(error);
     }
   });
+
+  app.get('/api/upstreams/<private-reference-004>/projects', async (c) => {
+    try {
+      return c.json(await requireClient('<private-reference-004>', deps.clients.<private-reference-004>).listProjects());
+    } catch (error) {
+      return upstreamFailure(error);
+    }
+  });
+
+  app.get('/api/upstreams/<private-reference-004>/projects/:projectId', async (c) => {
+    try {
+      return c.json(await requireClient('<private-reference-004>', deps.clients.<private-reference-004>).getProject(c.req.param('projectId')));
+    } catch (error) {
+      return upstreamFailure(error);
+    }
+  });
+
+  app.get('/api/upstreams/<private-reference-004>/projects/:projectId/members', async (c) => {
+    try {
+      return c.json(await requireClient('<private-reference-004>', deps.clients.<private-reference-004>).listMembers(c.req.param('projectId')));
+    } catch (error) {
+      return upstreamFailure(error);
+    }
+  });
 }

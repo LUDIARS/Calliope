@@ -2,6 +2,8 @@ export interface HttpClientOptions {
   baseUrl: string;
   token: string | null;
   service: string;
+  /** additional fixed headers (e.g. <private-reference-004>'s X-<private-reference-004>-Service-Token gate) */
+  headers?: Record<string, string>;
 }
 
 export class UpstreamError extends Error {
@@ -15,7 +17,7 @@ export function makeHttp(opts: HttpClientOptions) {
   const base = opts.baseUrl.replace(/\/$/, '');
 
   async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
-    const headers: Record<string, string> = { accept: 'application/json' };
+    const headers: Record<string, string> = { accept: 'application/json', ...opts.headers };
     if (body !== undefined) headers['content-type'] = 'application/json';
     if (opts.token) headers.authorization = `Bearer ${opts.token}`;
     const res = await fetch(`${base}${path}`, {

@@ -34,3 +34,28 @@ export function parseTaskRef(ref: string): TaskRef {
   }
   throw new Error(`invalid task_ref: ${ref}`);
 }
+
+// <private-reference-004> プロジェクトスコープ (docs/design/<private-reference-004>-pm.md §H3)。 <private-reference-004> の projects
+// レジストリを Calliope の project scope (priority/plan/sprint/risk が既に
+// 使う自由形式の projectRef 文字列) に `<private-reference-004>:<project_id>` の形で載せる。
+// taskRef (上記) とは別体系: taskRef は「タスク行の所有システム」を指し、
+// <private-reference-004> 紐付けタスクの実体は引き続き Actio コアの taskRef (`actio:<id>`) を使う。
+// projectRef は「優先度解決・plan/sprint/risk の集計単位」を指す。
+
+export interface <private-reference-004>ProjectRef {
+  source: '<private-reference-004>';
+  projectId: string;
+}
+
+export function make<private-reference-004>ProjectRef(projectId: string): string {
+  return `<private-reference-004>:${requireRefPart(projectId, '<private-reference-004> project id')}`;
+}
+
+export function parse<private-reference-004>ProjectRef(ref: string): <private-reference-004>ProjectRef | null {
+  const match = /^<private-reference-004>:([^:/]+)$/.exec(ref);
+  return match?.[1] ? { source: '<private-reference-004>', projectId: match[1] } : null;
+}
+
+export function is<private-reference-004>ProjectRef(ref: string): boolean {
+  return ref.startsWith('<private-reference-004>:');
+}

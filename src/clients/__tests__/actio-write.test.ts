@@ -18,6 +18,7 @@ const taskFixture = {
   estimatedMinutes: null,
   pluginId: null,
   pluginRef: null,
+  projectId: null,
   completedAt: null,
   createdAt: '2026-07-17T00:00:00.000Z',
 };

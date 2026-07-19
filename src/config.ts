@@ -3,6 +3,14 @@ export interface UpstreamConfig {
   token: string | null;
 }
 
+export interface <private-reference-004>UpstreamConfig {
+  baseUrl: string | null;
+  /** Cernere で検証可能な user bearer (任意、他コネクタと同じ経路)。 */
+  token: string | null;
+  /** <private-reference-004> requireServiceToken ゲートの固定トークン (X-<private-reference-004>-Service-Token)。 */
+  serviceToken: string | null;
+}
+
 export interface CalliopeConfig {
   port: number;
   dbPath: string;
@@ -15,6 +23,8 @@ export interface CalliopeConfig {
   actio: UpstreamConfig;
   schedula: UpstreamConfig;
   memoria: UpstreamConfig;
+  /** <private-reference-004> Hub projects レジストリ接続 (docs/design/<private-reference-004>-pm.md §H3)。 H3 実装分のみ、任意設定。 */
+  <private-reference-004>?: <private-reference-004>UpstreamConfig;
   concordiaBaseUrl: string | null;
   nuntiusBaseUrl: string | null;
   nuntiusToken?: string | null;
@@ -58,6 +68,11 @@ export function loadConfig(): CalliopeConfig {
     memoria: {
       baseUrl: firstEnv('MEMORIA_BASE_URL', 'MEMORIA_API_URL', 'MEMORIA_URL'),
       token: firstEnv('MEMORIA_TOKEN'),
+    },
+    <private-reference-004>: {
+      baseUrl: firstEnv('<private-reference-004>_BASE_URL', '<private-reference-004>_API_URL', '<private-reference-004>_URL'),
+      token: firstEnv('<private-reference-004>_TOKEN'),
+      serviceToken: firstEnv('<private-reference-004>_PROJECTS_SERVICE_TOKEN'),
     },
     concordiaBaseUrl: firstEnv('CONCORDIA_BASE_URL', 'CONCORDIA_URL'),
     nuntiusBaseUrl: firstEnv('NUNTIUS_BASE_URL', 'NUNTIUS_URL'),
