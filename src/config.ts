@@ -22,6 +22,10 @@ export interface CalliopeConfig {
   weeklyRetrospective?: boolean;
   /** docs/design/<private-reference-004>-pm.md H4: <private-reference-004> 学生 PJ 向け週次進捗レポート (calliope.<private-reference-004>.weekly) 配信。 */
   <private-reference-004>WeeklyReport?: boolean;
+  /** docs/design/task-lifecycle.md §G3: タスク棚卸し (週次 + on-demand) を有効化するか。 */
+  taskStocktake?: boolean;
+  /** §G3 検出閾値 (env 可変)。 aging 既定 14 日、 priority 乖離既定 2 バケット。 */
+  stocktake?: { agingDays: number; priorityGap: number };
   actio: UpstreamConfig;
   schedula: UpstreamConfig;
   memoria: UpstreamConfig;
@@ -60,6 +64,11 @@ export function loadConfig(): CalliopeConfig {
     calendarAutoWrite: process.env.CALLIOPE_CALENDAR_AUTO_WRITE === 'on',
     weeklyRetrospective: process.env.CALLIOPE_WEEKLY_RETROSPECTIVE !== 'off',
     <private-reference-004>WeeklyReport: process.env.CALLIOPE_<private-reference-004>_WEEKLY_REPORT !== 'off',
+    taskStocktake: process.env.CALLIOPE_TASK_STOCKTAKE !== 'off',
+    stocktake: {
+      agingDays: positiveInteger(process.env.CALLIOPE_STOCKTAKE_AGING_DAYS, 14, 'CALLIOPE_STOCKTAKE_AGING_DAYS'),
+      priorityGap: positiveInteger(process.env.CALLIOPE_STOCKTAKE_PRIORITY_GAP, 2, 'CALLIOPE_STOCKTAKE_PRIORITY_GAP'),
+    },
     actio: {
       baseUrl: firstEnv('ACTIO_BASE_URL', 'ACTIO_API_URL', 'ACTIO_URL'),
       token: firstEnv('ACTIO_TOKEN'),

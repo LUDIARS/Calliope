@@ -11,6 +11,7 @@ import { makeDailyLoop } from './orchestration/loop.ts';
 import { startWeeklyOrchestrator } from './orchestration/weekly.ts';
 import { makeRetrospectiveEngine } from './retrospective/engine.ts';
 import { make<private-reference-004>WeeklyEngine } from './retrospective/<private-reference-004>-weekly.ts';
+import { makeStocktakeService } from './stocktake/service.ts';
 
 const config = loadConfig();
 if (!config.serviceToken) {
@@ -59,10 +60,24 @@ const <private-reference-004>Weekly = config.<private-reference-004>WeeklyReport
   )
   : null;
 
+// タスク棚卸し (task-lifecycle §G3): 週次 (月曜 08:00 JST、 retrospective と同スロット) + on-demand。
+const stocktakeWeekly = config.taskStocktake !== false
+  ? startWeeklyOrchestrator(
+    () => (clients.actio && clients.memoria)
+      // 上流未設定は無言 fallback せず、 明示スキップを返す (retrospective の流儀)。
+      ? makeStocktakeService({ config, actio: clients.actio, memoria: clients.memoria, repo }).runStocktake()
+      : Promise.resolve({ status: 'skipped' as const, warning: 'actio_or_memoria_unconfigured' }),
+    { onError: (error) => process.stderr.write(
+      `[calliope] weekly stocktake failed: ${error instanceof Error ? error.name : 'unknown'}\n`,
+    ) },
+  )
+  : null;
+
 function shutdown(): void {
   daily?.stop();
   weekly?.stop();
   <private-reference-004>Weekly?.stop();
+  stocktakeWeekly?.stop();
   server.close(() => {
     db.$client.close();
     process.exit(0);
