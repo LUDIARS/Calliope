@@ -111,25 +111,25 @@ export function mountUpstreamRoutes(app: Hono, deps: UpstreamRoutesDeps) {
     }
   });
 
-  app.get('/api/upstreams/<private-reference-004>/projects', async (c) => {
+  app.get('/api/upstreams/projecthub/projects', async (c) => {
     try {
-      return c.json(await requireClient('<private-reference-004>', deps.clients.<private-reference-004>).listProjects());
+      return c.json(await requireClient('projecthub', deps.clients.projecthub).listProjects());
     } catch (error) {
       return upstreamFailure(error);
     }
   });
 
-  app.get('/api/upstreams/<private-reference-004>/projects/:projectId', async (c) => {
+  app.get('/api/upstreams/projecthub/projects/:projectId', async (c) => {
     try {
-      return c.json(await requireClient('<private-reference-004>', deps.clients.<private-reference-004>).getProject(c.req.param('projectId')));
+      return c.json(await requireClient('projecthub', deps.clients.projecthub).getProject(c.req.param('projectId')));
     } catch (error) {
       return upstreamFailure(error);
     }
   });
 
-  app.get('/api/upstreams/<private-reference-004>/projects/:projectId/members', async (c) => {
+  app.get('/api/upstreams/projecthub/projects/:projectId/members', async (c) => {
     try {
-      return c.json(await requireClient('<private-reference-004>', deps.clients.<private-reference-004>).listMembers(c.req.param('projectId')));
+      return c.json(await requireClient('projecthub', deps.clients.projecthub).listMembers(c.req.param('projectId')));
     } catch (error) {
       return upstreamFailure(error);
     }

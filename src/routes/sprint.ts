@@ -32,7 +32,7 @@ export interface SprintRoutesDeps {
 function handleSprintError(error: unknown): Response {
   if (error instanceof SprintPrerequisiteError || error instanceof RiskPrerequisiteError) {
     if (error.missing.length === 1 && error.missing[0] === 'actio') throw unconfigured('actio');
-    if (error.missing.length === 1 && error.missing[0] === '<private-reference-004>') throw unconfigured('<private-reference-004>');
+    if (error.missing.length === 1 && error.missing[0] === 'projecthub') throw unconfigured('projecthub');
     return Response.json({
       error: 'sprint_prerequisites_missing',
       missing: error.missing,

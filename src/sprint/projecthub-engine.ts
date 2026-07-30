@@ -1,27 +1,27 @@
-// <private-reference-004> scope (`<private-reference-004>:<project_id>`) 用のスプリント設計/replan。
-// docs/design/<private-reference-004>-pm.md H4 の実装。 能力C (sprint 設計/replan/close) を学生 PJ に適用する。
+// PROJECTHUB scope (`projecthub:<project_id>`) 用のスプリント設計/replan。
+// docs/design/projecthub-pm.md H4 の実装。 能力C (sprint 設計/replan/close) を学生 PJ に適用する。
 //
 // Actio PM project 版 (engine.ts の designPm/replanPm) とロジックの骨格は同じだが、入力ソースが
 // 異なる (Gompertz バグ収束・critical path・タスク履歴 API が無い) ため縮退モードで動く。
 // H1-3 最終裁定: 学生 PJ への書込系 (タスク生成・リスケ適用) は auto-apply 禁止・confirmation
-// 経由のみ。 このファイルは Actio/<private-reference-004> へは一切書き込まない (Calliope 自身の sprint/curve
+// 経由のみ。 このファイルは Actio/PROJECTHUB へは一切書き込まない (Calliope 自身の sprint/curve
 // レコードのみを書く) — 返す proposals はあくまで提案であり、適用は行わない。
 
 import { randomUUID } from 'node:crypto';
 import type { CalliopeClients } from '../clients/index.ts';
 import type { CalliopeRepository } from '../db/repository.ts';
-import { build<private-reference-004>Candidates } from './candidates.ts';
+import { buildProjectHubCandidates } from './candidates.ts';
 import { calculateSprintCapacity } from './capacity.ts';
 import { SprintPrerequisiteError } from './errors.ts';
-import { degradedBugReserve, load<private-reference-004>Inflow, load<private-reference-004>SprintTasks } from './<private-reference-004>-tasks.ts';
-import { calculate<private-reference-004>VelocityFallback, type <private-reference-004>VelocityFallback } from './<private-reference-004>-velocity.ts';
-import type { <private-reference-004>ProjectHandle } from './project.ts';
+import { degradedBugReserve, loadProjectHubInflow, loadProjectHubSprintTasks } from './projecthub-tasks.ts';
+import { calculateProjectHubVelocityFallback, type ProjectHubVelocityFallback } from './projecthub-velocity.ts';
+import type { ProjectHubProjectHandle } from './project.ts';
 import { isCompletedStatus } from '../planning/tasks.ts';
 import { parseTaskRef } from '../refs.ts';
 import { parseVelocityDistribution } from '../velocity/distribution.ts';
 import { average, daysBetween, goalProgressFromStatus, MS_PER_DAY } from './util.ts';
 
-export interface <private-reference-004>SprintDeps {
+export interface ProjectHubSprintDeps {
   clients: CalliopeClients;
   repo: CalliopeRepository;
   agentLanes: number;
@@ -44,40 +44,40 @@ function findStoredVelocity(rows: StoredVelocityRow[], projectRef: string): Stor
 }
 
 const GOMPERTZ_DEGRADED_WARNING =
-  'gompertz_degraded: <private-reference-004> scope has no bug curve data; bug reserve is zero (inflow-reservation-only mode)';
+  'gompertz_degraded: projecthub scope has no bug curve data; bug reserve is zero (inflow-reservation-only mode)';
 const INFLOW_DEGRADED_WARNING =
-  '<private-reference-004>_scope_task_history_unavailable: inflow computed from task.createdAt only';
+  'projecthub_scope_task_history_unavailable: inflow computed from task.createdAt only';
 
-export async function design<private-reference-004>(
-  deps: <private-reference-004>SprintDeps,
-  handle: <private-reference-004>ProjectHandle,
+export async function designProjectHub(
+  deps: ProjectHubSprintDeps,
+  handle: ProjectHubProjectHandle,
   input: { goalRef?: string; sprintDays: number },
   now: Date,
 ) {
   const { sprintDays } = input;
   const [tasks, estimates, priorities, storedVelocities] = await Promise.all([
-    load<private-reference-004>SprintTasks(handle.actio, handle.rawId),
+    loadProjectHubSprintTasks(handle.actio, handle.rawId),
     deps.repo.listTaskEstimates(),
     deps.repo.listPriorities({ scope: 'task' }),
     deps.repo.listLatestVelocity(),
   ]);
-  const velocity: <private-reference-004>VelocityFallback | StoredVelocityRow =
+  const velocity: ProjectHubVelocityFallback | StoredVelocityRow =
     findStoredVelocity(storedVelocities, handle.projectRef) ??
-    calculate<private-reference-004>VelocityFallback(handle.projectRef, tasks, now);
+    calculateProjectHubVelocityFallback(handle.projectRef, tasks, now);
   const missing: string[] = [];
   if (!velocity || velocity.throughput <= 0) missing.push('velocity');
   if (estimates.length === 0 && tasks.every((task) => task.declaredEffortMinutes === null)) missing.push('estimates');
   if (priorities.length === 0) missing.push('priority');
   if (missing.length > 0) throw new SprintPrerequisiteError(missing);
 
-  const built = build<private-reference-004>Candidates(tasks, estimates, priorities);
+  const built = buildProjectHubCandidates(tasks, estimates, priorities);
   const allEffortByRef = new Map<string, number>();
   for (const task of tasks) {
     const stored = estimates.find((row) => row.taskRef === task.taskRef)?.effortMinutes;
     const effort = task.declaredEffortMinutes ?? stored;
     if (effort !== undefined && effort > 0) allEffortByRef.set(task.taskRef, effort);
   }
-  const inflow = await load<private-reference-004>Inflow(tasks, allEffortByRef, now);
+  const inflow = await loadProjectHubInflow(tasks, allEffortByRef, now);
   const bugReserve = degradedBugReserve();
 
   const warnings: string[] = [GOMPERTZ_DEGRADED_WARNING, INFLOW_DEGRADED_WARNING];
@@ -161,15 +161,15 @@ export async function design<private-reference-004>(
   };
 }
 
-export async function replan<private-reference-004>(
-  deps: <private-reference-004>SprintDeps,
-  handle: <private-reference-004>ProjectHandle,
+export async function replanProjectHub(
+  deps: ProjectHubSprintDeps,
+  handle: ProjectHubProjectHandle,
   existing: NonNullable<Awaited<ReturnType<CalliopeRepository['getSprintWithTasks']>>>,
 ) {
   const sprintId = existing.id;
   const now = deps.now?.() ?? new Date();
   const [tasks, estimates, priorities, storedVelocities, goalEvals] = await Promise.all([
-    load<private-reference-004>SprintTasks(handle.actio, handle.rawId),
+    loadProjectHubSprintTasks(handle.actio, handle.rawId),
     deps.repo.listTaskEstimates(),
     deps.repo.listPriorities({ scope: 'task' }),
     deps.repo.listLatestVelocity(),
@@ -177,12 +177,12 @@ export async function replan<private-reference-004>(
       ? deps.clients.memoria.getGoalEvals(now.toISOString().slice(0, 7))
       : Promise.resolve(null),
   ]);
-  const velocity: <private-reference-004>VelocityFallback | StoredVelocityRow =
+  const velocity: ProjectHubVelocityFallback | StoredVelocityRow =
     findStoredVelocity(storedVelocities, handle.projectRef) ??
-    calculate<private-reference-004>VelocityFallback(handle.projectRef, tasks, now);
+    calculateProjectHubVelocityFallback(handle.projectRef, tasks, now);
   if (!velocity || velocity.throughput <= 0) throw new SprintPrerequisiteError(['velocity']);
 
-  const built = build<private-reference-004>Candidates(tasks, estimates, priorities);
+  const built = buildProjectHubCandidates(tasks, estimates, priorities);
   const currentByRef = new Map(tasks.map((task) => [task.taskRef, task]));
   const states = existing.tasks.map((committed) => {
     const current = currentByRef.get(committed.taskRef);
@@ -206,7 +206,7 @@ export async function replan<private-reference-004>(
   const plannedRemaining = totalCommitted * (1 - elapsedFraction);
 
   const effortByRef = new Map(existing.tasks.map((task) => [task.taskRef, task.effortMinutes]));
-  const inflow = await load<private-reference-004>Inflow(tasks, effortByRef, now);
+  const inflow = await loadProjectHubInflow(tasks, effortByRef, now);
   const remainingDays = Math.max(daysBetween(now, periodEnd), 1 / 24);
   const averageEffortMinutes = average(existing.tasks.map((task) => task.effortMinutes));
   const capacity = calculateSprintCapacity({
@@ -290,7 +290,7 @@ export async function replan<private-reference-004>(
     goalProgress,
   };
   // H1-3 最終裁定: 学生 PJ への書込系 (リスケ適用) は auto-apply 禁止。
-  // ここで返す proposals は提案に留まり、Calliope はこれを Actio/<private-reference-004> に書き戻さない
+  // ここで返す proposals は提案に留まり、Calliope はこれを Actio/PROJECTHUB に書き戻さない
   // (書込を行う場合は既存の confirmation フロー経由のみ — このタスクでは書込パス自体を追加しない)。
   const proposals = isDelayed || isGoalProgressLate ? {
     scopeReduction,

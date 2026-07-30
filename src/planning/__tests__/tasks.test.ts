@@ -25,9 +25,9 @@ function actioTask(overrides: Partial<ActioTask> = {}): ActioTask {
 }
 
 describe('projectRefForActioTask', () => {
-  it('scopes <private-reference-004>-linked tasks (tasks.project_id set) to <private-reference-004>:<project_id>, ahead of category', () => {
-    const task = actioTask({ projectId: '<private-reference-004>-proj-1', category: 'some-category' });
-    expect(projectRefForActioTask(task)).toBe('<private-reference-004>:<private-reference-004>-proj-1');
+  it('scopes PROJECTHUB-linked tasks (tasks.project_id set) to projecthub:<project_id>, ahead of category', () => {
+    const task = actioTask({ projectId: 'projecthub-proj-1', category: 'some-category' });
+    expect(projectRefForActioTask(task)).toBe('projecthub:projecthub-proj-1');
   });
 
   it('falls back to category when project_id is absent (existing behavior unchanged)', () => {
@@ -51,9 +51,9 @@ describe('projectRefForActioTask', () => {
 });
 
 describe('toCorePlanningTask', () => {
-  it('carries the <private-reference-004> project scope through into the planning task projectRef', () => {
-    const planningTask = toCorePlanningTask(actioTask({ projectId: '<private-reference-004>-proj-1', category: 'ignored' }));
-    expect(planningTask.projectRef).toBe('<private-reference-004>:<private-reference-004>-proj-1');
+  it('carries the projecthub project scope through into the planning task projectRef', () => {
+    const planningTask = toCorePlanningTask(actioTask({ projectId: 'projecthub-proj-1', category: 'ignored' }));
+    expect(planningTask.projectRef).toBe('projecthub:projecthub-proj-1');
     expect(planningTask.taskRef).toBe('actio:task-1');
   });
 });

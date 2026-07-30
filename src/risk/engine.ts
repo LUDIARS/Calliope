@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { CalliopeClients } from '../clients/index.ts';
 import type { CalliopeRepository } from '../db/repository.ts';
 import { loadPlanningTasks } from '../planning/tasks.ts';
-import { is<private-reference-004>ProjectRef } from '../refs.ts';
+import { isProjectHubProjectRef } from '../refs.ts';
 import { estimateP80Factor, velocityConfidence } from '../velocity/distribution.ts';
 import { evaluateGoalRisk } from './score.ts';
 
@@ -66,13 +66,13 @@ export function makeRiskEngine(deps: RiskEngineDeps) {
           skipped.push({ sprintId: sprint.id, reason: 'sprint_closed' });
           continue;
         }
-        if (is<private-reference-004>ProjectRef(sprint.projectRef)) {
-          // docs/design/<private-reference-004>-pm.md H4: <private-reference-004> scope の学生 PJ タスクは Actio PM の critical-path
+        if (isProjectHubProjectRef(sprint.projectRef)) {
+          // docs/design/projecthub-pm.md H4: PROJECTHUB scope の学生 PJ タスクは Actio PM の critical-path
           // 分析 API を持たない (PM プロジェクトではなく Actio コア tasks.project_id 紐付けのため)。
           // ここでの goal-risk snapshot (Gompertz/critical-path 前提) は対象外とし、
-          // <private-reference-004> scope の進捗/リスクは GET /api/<private-reference-004>/progress (src/sprint/progress.ts) が
+          // PROJECTHUB scope の進捗/リスクは GET /api/projecthub/progress (src/sprint/progress.ts) が
           // 縮退モードで on-demand に合成する (無言フォールバックにせず明示スキップする)。
-          skipped.push({ sprintId: sprint.id, reason: '<private-reference-004>_scope_unsupported_for_goal_risk' });
+          skipped.push({ sprintId: sprint.id, reason: 'projecthub_scope_unsupported_for_goal_risk' });
           continue;
         }
         if (!sprint.goalRef) {

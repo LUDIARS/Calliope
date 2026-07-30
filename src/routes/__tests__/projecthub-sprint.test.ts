@@ -48,7 +48,7 @@ function config(overrides: Partial<CalliopeConfig> = {}): CalliopeConfig {
     actio: { baseUrl: 'http://actio.test', token: null },
     schedula: { baseUrl: null, token: null },
     memoria: { baseUrl: null, token: null },
-    <private-reference-004>: { baseUrl: 'http://<private-reference-004>.test', token: null, serviceToken: '<private-reference-004>-secret' },
+    projecthub: { baseUrl: 'http://projecthub.test', token: null, serviceToken: 'projecthub-secret' },
     concordiaBaseUrl: null,
     nuntiusBaseUrl: null,
     claudeBin: 'claude',
@@ -77,7 +77,7 @@ function installFixture() {
     }
     if (url.endsWith('/api/pm/projects')) {
       // loadPlanningTasks() always calls Actio PM projects too (scope-agnostic unification);
-      // this <private-reference-004>-linked project has no Actio PM projects registered.
+      // this projecthub-linked project has no Actio PM projects registered.
       return Response.json({ projects: [] });
     }
     if (url.endsWith('/api/x/projects/external/projects/p1')) {
@@ -97,8 +97,8 @@ function installFixture() {
   });
 }
 
-describe('<private-reference-004> scope sprint routes (docs/design/<private-reference-004>-pm.md H4)', () => {
-  it('designs, activates, replans (degraded gompertz), and closes a <private-reference-004>:<project_id> sprint', async () => {
+describe('PROJECTHUB scope sprint routes (docs/design/projecthub-pm.md H4)', () => {
+  it('designs, activates, replans (degraded gompertz), and closes a projecthub:<project_id> sprint', async () => {
     installFixture();
     const db = testDb();
     const repo = makeRepository(db);
@@ -111,17 +111,17 @@ describe('<private-reference-004> scope sprint routes (docs/design/<private-refe
     const createdResponse = await app.request('/api/sprint', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ projectRef: '<private-reference-004>:p1', sprintDays: 14 }),
+      body: JSON.stringify({ projectRef: 'projecthub:p1', sprintDays: 14 }),
     });
     expect(createdResponse.status).toBe(201);
     const created = await createdResponse.json() as {
       sprint: { id: string; projectRef: string; tasks: Array<{ taskRef: string }> };
       warnings: string[];
     };
-    expect(created.sprint.projectRef).toBe('<private-reference-004>:p1');
+    expect(created.sprint.projectRef).toBe('projecthub:p1');
     expect(created.sprint.tasks.map((task) => task.taskRef)).toEqual(['actio:task-open']);
     expect(created.warnings).toContain(
-      'gompertz_degraded: <private-reference-004> scope has no bug curve data; bug reserve is zero (inflow-reservation-only mode)',
+      'gompertz_degraded: projecthub scope has no bug curve data; bug reserve is zero (inflow-reservation-only mode)',
     );
 
     const activateResponse = await app.request(`/api/sprint/${created.sprint.id}/activate`, { method: 'POST' });
@@ -135,14 +135,14 @@ describe('<private-reference-004> scope sprint routes (docs/design/<private-refe
     };
     expect(replanned.health.gompertzConfidence).toBe(0);
 
-    // H4: <private-reference-004> scope has no Actio PM critical-path source, so the generic goal-risk engine
+    // H4: PROJECTHUB scope has no Actio PM critical-path source, so the generic goal-risk engine
     // must explicitly skip it rather than silently fall back or crash.
     expect(replanned.risk.skipped).toEqual([
-      expect.objectContaining({ sprintId: created.sprint.id, reason: '<private-reference-004>_scope_unsupported_for_goal_risk' }),
+      expect.objectContaining({ sprintId: created.sprint.id, reason: 'projecthub_scope_unsupported_for_goal_risk' }),
     ]);
     expect(replanned.risk.snapshots).toHaveLength(0);
 
-    const progressResponse = await app.request('/api/<private-reference-004>/progress?project_id=p1');
+    const progressResponse = await app.request('/api/projecthub/progress?project_id=p1');
     expect(progressResponse.status).toBe(200);
     const progress = await progressResponse.json() as {
       projects: Array<{ projectId: string; health: { status: string }; burndown: { committedMinutes: number } | null }>;
@@ -155,26 +155,26 @@ describe('<private-reference-004> scope sprint routes (docs/design/<private-refe
     expect(closeResponse.status).toBe(200);
     const closed = await closeResponse.json() as { sprint: { status: string }; nextSprint: { sprint: { projectRef: string } } };
     expect(closed.sprint.status).toBe('closed');
-    expect(closed.nextSprint.sprint.projectRef).toBe('<private-reference-004>:p1');
+    expect(closed.nextSprint.sprint.projectRef).toBe('projecthub:p1');
   });
 
-  it('returns <private-reference-004>_unconfigured (503) instead of falling back to Actio PM lookup', async () => {
+  it('returns projecthub_unconfigured (503) instead of falling back to Actio PM lookup', async () => {
     installFixture();
     const db = testDb();
-    const app = createApp(config({ <private-reference-004>: { baseUrl: null, token: null, serviceToken: null } }), { db });
+    const app = createApp(config({ projecthub: { baseUrl: null, token: null, serviceToken: null } }), { db });
     const response = await app.request('/api/sprint', {
       method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ projectRef: '<private-reference-004>:p1' }),
+      body: JSON.stringify({ projectRef: 'projecthub:p1' }),
     });
     expect(response.status).toBe(503);
-    await expect(response.json()).resolves.toMatchObject({ error: '<private-reference-004>_unconfigured' });
+    await expect(response.json()).resolves.toMatchObject({ error: 'projecthub_unconfigured' });
   });
 
-  it('reports a no_sprint progress entry for a <private-reference-004> project with no sprint yet', async () => {
+  it('reports a no_sprint progress entry for a projecthub project with no sprint yet', async () => {
     installFixture();
     const db = testDb();
     const app = createApp(config(), { db });
-    const response = await app.request('/api/<private-reference-004>/progress?project_id=p1');
+    const response = await app.request('/api/projecthub/progress?project_id=p1');
     expect(response.status).toBe(200);
     const body = await response.json() as { projects: Array<{ health: { status: string } }> };
     expect(body.projects[0]?.health.status).toBe('no_sprint');

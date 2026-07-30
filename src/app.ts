@@ -10,7 +10,7 @@ import { mountEstimateRoutes } from './routes/estimates.ts';
 import { mountConfirmationRoutes } from './routes/confirmations.ts';
 import { mountBriefingRoutes } from './routes/briefing.ts';
 import { mountCalendarRoutes } from './routes/calendar.ts';
-import { mount<private-reference-004>Routes } from './routes/<private-reference-004>.ts';
+import { mountProjectHubRoutes } from './routes/projecthub.ts';
 import { mountHealthRoutes } from './routes/health.ts';
 import { mountPlanRoutes } from './routes/plan.ts';
 import { mountPriorityRoutes } from './routes/priority.ts';
@@ -58,7 +58,7 @@ export function createApp(config: CalliopeConfig, deps: CreateAppDeps = {}) {
   mountCalendarRoutes(app, { config, clients, repo });
   mountRetrospectiveRoutes(app, { clients, repo });
   mountStocktakeRoutes(app, { config, clients, repo });
-  mount<private-reference-004>Routes(app, { clients, repo });
+  mountProjectHubRoutes(app, { clients, repo });
 
   return app;
 }

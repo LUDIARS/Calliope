@@ -2,7 +2,7 @@ export interface HttpClientOptions {
   baseUrl: string;
   token: string | null;
   service: string;
-  /** additional fixed headers (e.g. <private-reference-004>'s X-<private-reference-004>-Service-Token gate) */
+  /** additional fixed headers (e.g. PROJECTHUB's X-ProjectHub-Service-Token gate) */
   headers?: Record<string, string>;
 }
 

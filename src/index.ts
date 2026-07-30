@@ -10,7 +10,7 @@ import { makeBriefingEngine } from './briefing/engine.ts';
 import { makeDailyLoop } from './orchestration/loop.ts';
 import { startWeeklyOrchestrator } from './orchestration/weekly.ts';
 import { makeRetrospectiveEngine } from './retrospective/engine.ts';
-import { make<private-reference-004>WeeklyEngine } from './retrospective/<private-reference-004>-weekly.ts';
+import { makeProjectHubWeeklyEngine } from './retrospective/projecthub-weekly.ts';
 import { makeStocktakeService } from './stocktake/service.ts';
 
 const config = loadConfig();
@@ -51,11 +51,11 @@ const weekly = config.weeklyRetrospective !== false
   )
   : null;
 
-const <private-reference-004>Weekly = config.<private-reference-004>WeeklyReport !== false
+const projecthubWeekly = config.projecthubWeeklyReport !== false
   ? startWeeklyOrchestrator(
-    () => make<private-reference-004>WeeklyEngine({ clients, repo }).sendWeekly(),
+    () => makeProjectHubWeeklyEngine({ clients, repo }).sendWeekly(),
     { onError: (error) => process.stderr.write(
-      `[calliope] <private-reference-004> weekly report failed: ${error instanceof Error ? error.name : 'unknown'}\n`,
+      `[calliope] projecthub weekly report failed: ${error instanceof Error ? error.name : 'unknown'}\n`,
     ) },
   )
   : null;
@@ -76,7 +76,7 @@ const stocktakeWeekly = config.taskStocktake !== false
 function shutdown(): void {
   daily?.stop();
   weekly?.stop();
-  <private-reference-004>Weekly?.stop();
+  projecthubWeekly?.stop();
   stocktakeWeekly?.stop();
   server.close(() => {
     db.$client.close();

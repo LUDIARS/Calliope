@@ -1,7 +1,7 @@
 // スプリント候補タスクの正規化。
-// Actio PM プロジェクト (pm/projects + pm/tasks) と <private-reference-004> scope (Actio コア tasks の
-// project_id 紐付け、docs/design/<private-reference-004>-pm.md H1/H4) はソースの形が異なるため、
-// スコープごとの読み出しは別ファイル (engine.ts / <private-reference-004>-tasks.ts) に任せ、
+// Actio PM プロジェクト (pm/projects + pm/tasks) と PROJECTHUB scope (Actio コア tasks の
+// project_id 紐付け、docs/design/projecthub-pm.md H1/H4) はソースの形が異なるため、
+// スコープごとの読み出しは別ファイル (engine.ts / projecthub-tasks.ts) に任せ、
 // このファイルは両者が合流する「候補タスク」の形と組み立てロジックだけを持つ (SRP)。
 
 import type { PmTask } from '../clients/contracts.ts';
@@ -74,11 +74,11 @@ export function buildCandidates(
 }
 
 /**
- * <private-reference-004> scope (`<private-reference-004>:<project_id>`) 用のタスク正規化形。
- * Actio コアの `tasks` (project_id 紐付け) から作る — <private-reference-004> 側にタスクエンジンを
- * 二重実装しない (docs/design/<private-reference-004>-pm.md H1 最終裁定)。
+ * PROJECTHUB scope (`projecthub:<project_id>`) 用のタスク正規化形。
+ * Actio コアの `tasks` (project_id 紐付け) から作る — PROJECTHUB 側にタスクエンジンを
+ * 二重実装しない (docs/design/projecthub-pm.md H1 最終裁定)。
  */
-export interface <private-reference-004>SprintTask {
+export interface ProjectHubSprintTask {
   taskRef: string;
   sourceId: string;
   sourceStatus: string;
@@ -91,11 +91,11 @@ export interface <private-reference-004>SprintTask {
 }
 
 /**
- * <private-reference-004> scope の候補組み立て。 PM 版と異なり依存関係グラフ (blockedBy) が Actio コア tasks には
+ * PROJECTHUB scope の候補組み立て。 PM 版と異なり依存関係グラフ (blockedBy) が Actio コア tasks には
  * 無いため isReady は常に true (H1「依存関係/milestone は必要時に再設計相談」で明示的に据え置き)。
  */
-export function build<private-reference-004>Candidates(
-  tasks: <private-reference-004>SprintTask[],
+export function buildProjectHubCandidates(
+  tasks: ProjectHubSprintTask[],
   estimates: Array<{ taskRef: string; effortMinutes: number }>,
   priorities: Array<{ ref: string; resolvedScore: number }>,
 ): CandidateBuildResult {

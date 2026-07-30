@@ -1,6 +1,6 @@
 import type { ActioClient } from '../clients/actio.ts';
 import type { ActioTask, PmTask } from '../clients/contracts.ts';
-import { make<private-reference-004>ProjectRef, makeTaskRef } from '../refs.ts';
+import { makeProjectHubProjectRef, makeTaskRef } from '../refs.ts';
 
 export interface PlanningTask {
   taskRef: string;
@@ -27,12 +27,12 @@ export function isCompletedStatus(status: string): boolean {
 }
 
 export function projectRefForActioTask(task: ActioTask): string {
-  // <private-reference-004> 紐付けタスク (Actio tasks.project_id = <private-reference-004>_project.id 不透明参照、
-  // docs/design/<private-reference-004>-pm.md H1 最終裁定) は category/pluginId より優先して
-  // <private-reference-004>:<project_id> scope に載せる (既存 category/pluginId ベースの挙動は
+  // PROJECTHUB 紐付けタスク (Actio tasks.project_id = projecthub_project.id 不透明参照、
+  // docs/design/projecthub-pm.md H1 最終裁定) は category/pluginId より優先して
+  // projecthub:<project_id> scope に載せる (既存 category/pluginId ベースの挙動は
   // project_id 未設定タスクでは不変)。
-  const <private-reference-004>ProjectId = task.projectId?.trim();
-  if (<private-reference-004>ProjectId) return make<private-reference-004>ProjectRef(<private-reference-004>ProjectId);
+  const projecthubProjectId = task.projectId?.trim();
+  if (projecthubProjectId) return makeProjectHubProjectRef(projecthubProjectId);
   return task.category?.trim() || task.pluginId?.trim() || 'actio';
 }
 

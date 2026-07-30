@@ -5,7 +5,7 @@ import type { CalliopeClients } from '../../clients/index.ts';
 import type { CalliopeDb } from '../../db/client.ts';
 import { makeRepository } from '../../db/repository.ts';
 import * as schema from '../../db/schema.ts';
-import { make<private-reference-004>WeeklyEngine } from '../<private-reference-004>-weekly.ts';
+import { makeProjectHubWeeklyEngine } from '../projecthub-weekly.ts';
 
 const databases: Database.Database[] = [];
 afterEach(() => { for (const db of databases.splice(0)) db.close(); });
@@ -28,38 +28,38 @@ function fakeClients(overrides: Partial<CalliopeClients> = {}): CalliopeClients 
     schedula: null,
     memoria: null,
     nuntius: null,
-    <private-reference-004>: null,
+    projecthub: null,
     ...overrides,
   } as CalliopeClients;
 }
 
-describe('<private-reference-004> weekly report delivery (docs/design/<private-reference-004>-pm.md H4, calliope.<private-reference-004>.weekly)', () => {
+describe('PROJECTHUB weekly report delivery (docs/design/projecthub-pm.md H4, calliope.projecthub.weekly)', () => {
   it('explicitly skips delivery when Nuntius is unconfigured (no silent drop)', async () => {
     const repo = makeRepository(testDb());
     const clients = fakeClients({
-      <private-reference-004>: { listProjects: async () => [] } as unknown as CalliopeClients['<private-reference-004>'],
+      projecthub: { listProjects: async () => [] } as unknown as CalliopeClients['projecthub'],
       actio: { listTasks: async () => [] } as unknown as CalliopeClients['actio'],
     });
-    const engine = make<private-reference-004>WeeklyEngine({ clients, repo });
+    const engine = makeProjectHubWeeklyEngine({ clients, repo });
     const result = await engine.sendWeekly();
     expect(result.notification).toEqual({ status: 'skipped', warning: 'nuntius_unconfigured_or_token_missing' });
     expect(result.report?.projects).toEqual([]);
   });
 
-  it('explicitly skips (not silently) when <private-reference-004> itself is unconfigured', async () => {
+  it('explicitly skips (not silently) when PROJECTHUB itself is unconfigured', async () => {
     const repo = makeRepository(testDb());
-    const engine = make<private-reference-004>WeeklyEngine({ clients: fakeClients(), repo });
+    const engine = makeProjectHubWeeklyEngine({ clients: fakeClients(), repo });
     const result = await engine.sendWeekly();
     expect(result.report).toBeNull();
     expect(result.notification.status).toBe('skipped');
-    expect(result.notification.warning).toContain('<private-reference-004>_prerequisites_missing');
+    expect(result.notification.warning).toContain('projecthub_prerequisites_missing');
   });
 
-  it('publishes to the calliope.<private-reference-004>.weekly topic once <private-reference-004>, Actio, and Nuntius are all configured', async () => {
+  it('publishes to the calliope.projecthub.weekly topic once PROJECTHUB, Actio, and Nuntius are all configured', async () => {
     const repo = makeRepository(testDb());
     let publishedTopic: string | null = null;
     const clients = fakeClients({
-      <private-reference-004>: {
+      projecthub: {
         listProjects: async () => [{
           id: 'p1', name: 'Demo Game', description: null, status: 'active', repoUrl: null,
           createdAt: 0, updatedAt: 0, members: [],
@@ -67,19 +67,19 @@ describe('<private-reference-004> weekly report delivery (docs/design/<private-r
         getProject: async () => { throw new Error('not used in this test'); },
         listMembers: async () => [],
         health: async () => ({}),
-      } as unknown as CalliopeClients['<private-reference-004>'],
+      } as unknown as CalliopeClients['projecthub'],
       actio: { listTasks: async () => [] } as unknown as CalliopeClients['actio'],
       nuntius: {
-        publish<private-reference-004>WeeklyReport: async (report: unknown) => {
-          publishedTopic = 'calliope.<private-reference-004>.weekly';
-          return { topic: 'calliope.<private-reference-004>.weekly', delivered: 1, messages: [] };
+        publishProjectHubWeeklyReport: async (report: unknown) => {
+          publishedTopic = 'calliope.projecthub.weekly';
+          return { topic: 'calliope.projecthub.weekly', delivered: 1, messages: [] };
         },
       } as unknown as CalliopeClients['nuntius'],
     });
-    const engine = make<private-reference-004>WeeklyEngine({ clients, repo });
+    const engine = makeProjectHubWeeklyEngine({ clients, repo });
     const result = await engine.sendWeekly();
-    expect(publishedTopic).toBe('calliope.<private-reference-004>.weekly');
-    expect(result.notification).toMatchObject({ status: 'sent', topic: 'calliope.<private-reference-004>.weekly', delivered: 1 });
+    expect(publishedTopic).toBe('calliope.projecthub.weekly');
+    expect(result.notification).toMatchObject({ status: 'sent', topic: 'calliope.projecthub.weekly', delivered: 1 });
     expect(result.report?.projects[0]?.health.status).toBe('no_sprint');
   });
 });

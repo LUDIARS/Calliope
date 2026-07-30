@@ -1,14 +1,14 @@
-// <private-reference-004> scope (`<private-reference-004>:<project_id>`) の PJ 別進捗レポート合成。
-// docs/design/<private-reference-004>-pm.md H4: GET /api/<private-reference-004>/progress は sprint health / burndown / risk /
-// 停滞タスクを on-demand に合成する (保存しない)。 sprint/<private-reference-004>-engine.ts の replan<private-reference-004> と
-// 計算式の骨格は共通だが、 replan<private-reference-004> は repo への書込 (recordSprintTaskStates /
+// PROJECTHUB scope (`projecthub:<project_id>`) の PJ 別進捗レポート合成。
+// docs/design/projecthub-pm.md H4: GET /api/projecthub/progress は sprint health / burndown / risk /
+// 停滞タスクを on-demand に合成する (保存しない)。 sprint/projecthub-engine.ts の replanProjectHub と
+// 計算式の骨格は共通だが、 replanProjectHub は repo への書込 (recordSprintTaskStates /
 // upsertCurveSnapshot) を伴う「replan 操作」であるのに対し、 こちらは読み取り専用の
 // レポート合成であり DB には一切書かない (このファイルの純粋関数は I/O を持たない)。
 
 import { isCompletedStatus } from '../planning/tasks.ts';
 import { evaluateGoalRisk, type RiskLevel } from '../risk/score.ts';
 import { estimateP80Factor, parseVelocityDistribution } from '../velocity/distribution.ts';
-import type { <private-reference-004>SprintTask } from './candidates.ts';
+import type { ProjectHubSprintTask } from './candidates.ts';
 import { average, daysBetween, MS_PER_DAY } from './util.ts';
 
 const STALLED_THRESHOLD_DAYS = 3;
@@ -42,12 +42,12 @@ export interface GoalEvalLike {
   status: 'todo' | 'doing' | 'done';
 }
 
-export interface <private-reference-004>ProgressInput {
+export interface ProjectHubProgressInput {
   now: Date;
   project: { rawId: string; projectRef: string; name: string };
   sprint: ProgressSprint | null;
-  /** <private-reference-004> プロジェクト全体の現在の Actio コアタスク一覧 (sprint コミット有無に関わらず全件)。 */
-  currentTasks: <private-reference-004>SprintTask[];
+  /** PROJECTHUB プロジェクト全体の現在の Actio コアタスク一覧 (sprint コミット有無に関わらず全件)。 */
+  currentTasks: ProjectHubSprintTask[];
   velocity: ProgressVelocity | null;
   /** sprint.goalRef が指す goal タスクの deadline (無ければ null → periodEnd で代替)。 */
   goalDeadline: string | null;
@@ -61,7 +61,7 @@ export interface StalledTask {
   stalledDays: number;
 }
 
-export interface <private-reference-004>ProjectProgress {
+export interface ProjectHubProjectProgress {
   projectId: string;
   projectRef: string;
   projectName: string;
@@ -96,7 +96,7 @@ function goalProgressFromStatus(status: 'todo' | 'doing' | 'done'): number {
   return 0;
 }
 
-export function compose<private-reference-004>ProjectProgress(input: <private-reference-004>ProgressInput): <private-reference-004>ProjectProgress {
+export function composeProjectHubProjectProgress(input: ProjectHubProgressInput): ProjectHubProjectProgress {
   const base = { projectId: input.project.rawId, projectRef: input.project.projectRef, projectName: input.project.name };
   if (!input.sprint) {
     return {
@@ -114,10 +114,10 @@ export function compose<private-reference-004>ProjectProgress(input: <private-re
 
   const { sprint, now } = input;
   const warnings: string[] = [
-    'gompertz_degraded: <private-reference-004> scope has no bug curve data; capacity uses inflow-reservation only',
+    'gompertz_degraded: projecthub scope has no bug curve data; capacity uses inflow-reservation only',
   ];
   const currentByRef = new Map(input.currentTasks.map((task) => [task.taskRef, task]));
-  // replan<private-reference-004> と同じ照合ロジックだが、ここでは repo への書込 (recordSprintTaskStates) を
+  // replanProjectHub と同じ照合ロジックだが、ここでは repo への書込 (recordSprintTaskStates) を
   // 行わない — 進捗レポートは on-demand 合成であり保存しない (H4 完了条件)。
   const transientStatus = new Map(sprint.tasks.map((committed) => {
     const current = currentByRef.get(committed.taskRef);

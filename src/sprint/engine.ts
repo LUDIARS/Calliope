@@ -8,7 +8,7 @@ import { parseVelocityDistribution } from '../velocity/distribution.ts';
 import { buildCandidates, taskRefForPmTask as taskRef } from './candidates.ts';
 import { calculateSprintCapacity } from './capacity.ts';
 import { SprintPrerequisiteError } from './errors.ts';
-import { design<private-reference-004>, replan<private-reference-004> } from './<private-reference-004>-engine.ts';
+import { designProjectHub, replanProjectHub } from './projecthub-engine.ts';
 import { calculateInflow, type InflowEvent } from './inflow.ts';
 import { resolveSprintProject } from './project.ts';
 import { average, daysBetween, DEFAULT_SPRINT_DAYS, goalProgressFromStatus, MS_PER_DAY } from './util.ts';
@@ -209,8 +209,8 @@ export function makeSprintEngine(deps: SprintEngineDeps) {
     }
     const now = deps.now?.() ?? new Date();
     const handle = await resolveSprintProject(deps.clients, input.projectRef);
-    if (handle.scope === '<private-reference-004>') {
-      return design<private-reference-004>(deps, handle, { goalRef: input.goalRef, sprintDays }, now);
+    if (handle.scope === 'projecthub') {
+      return designProjectHub(deps, handle, { goalRef: input.goalRef, sprintDays }, now);
     }
     return designPm(handle, { goalRef: input.goalRef, sprintDays }, now);
   }
@@ -387,7 +387,7 @@ export function makeSprintEngine(deps: SprintEngineDeps) {
     if (!existing) throw new Error(`sprint not found: ${sprintId}`);
     if (existing.status === 'closed') throw new Error(`sprint is closed: ${sprintId}`);
     const handle = await resolveSprintProject(deps.clients, existing.projectRef);
-    if (handle.scope === '<private-reference-004>') return replan<private-reference-004>(deps, handle, existing);
+    if (handle.scope === 'projecthub') return replanProjectHub(deps, handle, existing);
     return replanPm(handle, existing);
   }
 

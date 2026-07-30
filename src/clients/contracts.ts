@@ -37,7 +37,7 @@ export const actioTaskSchema = z.object({
   estimatedMinutes: z.number().nonnegative().nullable().default(null),
   pluginId: z.string().nullable().default(null),
   pluginRef: z.string().nullable().default(null),
-  /** <private-reference-004> <private-reference-004>_project.id への不透明参照 (Calliope <private-reference-004>-pm.md H1 最終裁定)。 project master は Actio 側に複製しない。 */
+  /** PROJECTHUB projecthub_project.id への不透明参照 (Calliope projecthub-pm.md H1 最終裁定)。 project master は Actio 側に複製しない。 */
   projectId: z.string().nullable().default(null),
   completedAt: nullableIso.default(null),
   createdAt: z.string().datetime({ offset: true }),
@@ -209,14 +209,14 @@ export interface BusyEvent {
   end: string;
 }
 
-export const <private-reference-004>ProjectMemberSchema = z.object({
+export const projecthubProjectMemberSchema = z.object({
   userId: z.string().min(1),
   role: z.enum(['producer', 'member']),
   displayName: z.string().nullable(),
   createdAt: z.number(),
 });
 
-export const <private-reference-004>ProjectSchema = z.object({
+export const projecthubProjectSchema = z.object({
   id: z.string().min(1),
   name: z.string(),
   description: z.string().nullable(),
@@ -224,11 +224,11 @@ export const <private-reference-004>ProjectSchema = z.object({
   repoUrl: z.string().nullable(),
   createdAt: z.number(),
   updatedAt: z.number(),
-  members: z.array(<private-reference-004>ProjectMemberSchema).default([]),
+  members: z.array(projecthubProjectMemberSchema).default([]),
 });
 
-export const <private-reference-004>ProjectsResponseSchema = z.object({ projects: z.array(<private-reference-004>ProjectSchema) });
-export const <private-reference-004>ProjectResponseSchema = z.object({ project: <private-reference-004>ProjectSchema });
+export const projecthubProjectsResponseSchema = z.object({ projects: z.array(projecthubProjectSchema) });
+export const projecthubProjectResponseSchema = z.object({ project: projecthubProjectSchema });
 
-export type <private-reference-004>Project = z.infer<typeof <private-reference-004>ProjectSchema>;
-export type <private-reference-004>ProjectMember = z.infer<typeof <private-reference-004>ProjectMemberSchema>;
+export type ProjectHubProject = z.infer<typeof projecthubProjectSchema>;
+export type ProjectHubProjectMember = z.infer<typeof projecthubProjectMemberSchema>;

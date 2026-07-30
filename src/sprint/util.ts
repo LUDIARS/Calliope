@@ -1,4 +1,4 @@
-// sprint/engine.ts (Actio PM scope) と sprint/<private-reference-004>-engine.ts (<private-reference-004>:<id> scope) の
+// sprint/engine.ts (Actio PM scope) と sprint/projecthub-engine.ts (projecthub:<id> scope) の
 // 両方で使う、スコープに依存しない純粋ヘルパー。
 
 export const MS_PER_DAY = 24 * 60 * 60 * 1000;

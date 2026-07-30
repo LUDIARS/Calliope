@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
-  is<private-reference-004>ProjectRef,
-  make<private-reference-004>ProjectRef,
+  isProjectHubProjectRef,
+  makeProjectHubProjectRef,
   makeTaskRef,
-  parse<private-reference-004>ProjectRef,
+  parseProjectHubProjectRef,
   parseTaskRef,
 } from '../refs.ts';
 
@@ -25,16 +25,16 @@ describe('task refs', () => {
   });
 });
 
-describe('<private-reference-004> project scope refs', () => {
-  it('creates and parses canonical <private-reference-004> project refs', () => {
-    expect(make<private-reference-004>ProjectRef('proj-1')).toBe('<private-reference-004>:proj-1');
-    expect(parse<private-reference-004>ProjectRef('<private-reference-004>:proj-1')).toEqual({ source: '<private-reference-004>', projectId: 'proj-1' });
-    expect(is<private-reference-004>ProjectRef('<private-reference-004>:proj-1')).toBe(true);
+describe('projecthub project scope refs', () => {
+  it('creates and parses canonical projecthub project refs', () => {
+    expect(makeProjectHubProjectRef('proj-1')).toBe('projecthub:proj-1');
+    expect(parseProjectHubProjectRef('projecthub:proj-1')).toEqual({ source: 'projecthub', projectId: 'proj-1' });
+    expect(isProjectHubProjectRef('projecthub:proj-1')).toBe(true);
   });
 
-  it('rejects invalid <private-reference-004> project ids and non-<private-reference-004> refs', () => {
-    expect(() => make<private-reference-004>ProjectRef('bad/id')).toThrow('invalid <private-reference-004> project id');
-    expect(parse<private-reference-004>ProjectRef('actio:task-1')).toBeNull();
-    expect(is<private-reference-004>ProjectRef('actio:task-1')).toBe(false);
+  it('rejects invalid projecthub project ids and non-projecthub refs', () => {
+    expect(() => makeProjectHubProjectRef('bad/id')).toThrow('invalid projecthub project id');
+    expect(parseProjectHubProjectRef('actio:task-1')).toBeNull();
+    expect(isProjectHubProjectRef('actio:task-1')).toBe(false);
   });
 });

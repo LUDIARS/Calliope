@@ -3,11 +3,11 @@ export interface UpstreamConfig {
   token: string | null;
 }
 
-export interface <private-reference-004>UpstreamConfig {
+export interface ProjectHubUpstreamConfig {
   baseUrl: string | null;
   /** Cernere で検証可能な user bearer (任意、他コネクタと同じ経路)。 */
   token: string | null;
-  /** <private-reference-004> requireServiceToken ゲートの固定トークン (X-<private-reference-004>-Service-Token)。 */
+  /** PROJECTHUB requireServiceToken ゲートの固定トークン (X-ProjectHub-Service-Token)。 */
   serviceToken: string | null;
 }
 
@@ -20,8 +20,8 @@ export interface CalliopeConfig {
   dailyOrchestration?: boolean;
   calendarAutoWrite?: boolean;
   weeklyRetrospective?: boolean;
-  /** docs/design/<private-reference-004>-pm.md H4: <private-reference-004> 学生 PJ 向け週次進捗レポート (calliope.<private-reference-004>.weekly) 配信。 */
-  <private-reference-004>WeeklyReport?: boolean;
+  /** docs/design/projecthub-pm.md H4: PROJECTHUB 学生 PJ 向け週次進捗レポート (calliope.projecthub.weekly) 配信。 */
+  projecthubWeeklyReport?: boolean;
   /** docs/design/task-lifecycle.md §G3: タスク棚卸し (週次 + on-demand) を有効化するか。 */
   taskStocktake?: boolean;
   /** §G3 検出閾値 (env 可変)。 aging 既定 14 日、 priority 乖離既定 2 バケット。 */
@@ -29,8 +29,8 @@ export interface CalliopeConfig {
   actio: UpstreamConfig;
   schedula: UpstreamConfig;
   memoria: UpstreamConfig;
-  /** <private-reference-004> Hub projects レジストリ接続 (docs/design/<private-reference-004>-pm.md §H3)。 H3 実装分のみ、任意設定。 */
-  <private-reference-004>?: <private-reference-004>UpstreamConfig;
+  /** PROJECTHUB Hub projects レジストリ接続 (docs/design/projecthub-pm.md §H3)。 H3 実装分のみ、任意設定。 */
+  projecthub?: ProjectHubUpstreamConfig;
   concordiaBaseUrl: string | null;
   nuntiusBaseUrl: string | null;
   nuntiusToken?: string | null;
@@ -63,7 +63,7 @@ export function loadConfig(): CalliopeConfig {
     dailyOrchestration: process.env.CALLIOPE_DAILY_ORCHESTRATION !== 'off',
     calendarAutoWrite: process.env.CALLIOPE_CALENDAR_AUTO_WRITE === 'on',
     weeklyRetrospective: process.env.CALLIOPE_WEEKLY_RETROSPECTIVE !== 'off',
-    <private-reference-004>WeeklyReport: process.env.CALLIOPE_<private-reference-004>_WEEKLY_REPORT !== 'off',
+    projecthubWeeklyReport: process.env.CALLIOPE_PROJECTHUB_WEEKLY_REPORT !== 'off',
     taskStocktake: process.env.CALLIOPE_TASK_STOCKTAKE !== 'off',
     stocktake: {
       agingDays: positiveInteger(process.env.CALLIOPE_STOCKTAKE_AGING_DAYS, 14, 'CALLIOPE_STOCKTAKE_AGING_DAYS'),
@@ -81,10 +81,10 @@ export function loadConfig(): CalliopeConfig {
       baseUrl: firstEnv('MEMORIA_BASE_URL', 'MEMORIA_API_URL', 'MEMORIA_URL'),
       token: firstEnv('MEMORIA_TOKEN'),
     },
-    <private-reference-004>: {
-      baseUrl: firstEnv('<private-reference-004>_BASE_URL', '<private-reference-004>_API_URL', '<private-reference-004>_URL'),
-      token: firstEnv('<private-reference-004>_TOKEN'),
-      serviceToken: firstEnv('<private-reference-004>_PROJECTS_SERVICE_TOKEN'),
+    projecthub: {
+      baseUrl: firstEnv('PROJECTHUB_BASE_URL', 'PROJECTHUB_API_URL', 'PROJECTHUB_URL'),
+      token: firstEnv('PROJECTHUB_TOKEN'),
+      serviceToken: firstEnv('PROJECTHUB_PROJECTS_SERVICE_TOKEN'),
     },
     concordiaBaseUrl: firstEnv('CONCORDIA_BASE_URL', 'CONCORDIA_URL'),
     nuntiusBaseUrl: firstEnv('NUNTIUS_BASE_URL', 'NUNTIUS_URL'),
