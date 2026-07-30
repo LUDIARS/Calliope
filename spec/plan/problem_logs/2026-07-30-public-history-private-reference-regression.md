@@ -2,7 +2,7 @@
 
 - Date: 2026-07-30
 - Project: Calliope
-- Status: remediation in progress
+- Status: resolved
 - Severity: high
 - Affected repository ID: 1295061551
 - Integrated source tip: `c1061073d303b61ce5d6446a0871e76960c7f358`
@@ -44,3 +44,14 @@ those values from reachable Git objects.
 - Keep public integration contracts and fixtures label-neutral.
 - Add content, commit-message, and path scans to the public-release checklist.
 - Treat a replacement repository as a history migration, not a snapshot export.
+
+## Resolution evidence
+
+- Pull requests 11, 12, and 18 were integrated with merge commits before rewriting.
+- The replacement repository has a distinct ID from the archived original.
+- The rewritten main retains 25 commits and 3 merge commits with parent topology
+  preserved.
+- A fresh clone reported zero configured findings across commit messages, blob
+  contents, refs, and historical paths.
+- The external bundle is complete, `git fsck --full` succeeds, and the fresh clone's
+  main tip matches the saved clean-history tip.
