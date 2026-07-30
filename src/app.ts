@@ -21,6 +21,7 @@ import { mountSimulateRoutes } from './routes/simulate.ts';
 import { mountUpstreamRoutes } from './routes/upstreams.ts';
 import { mountVelocityRoutes } from './routes/velocity.ts';
 import { mountRetrospectiveRoutes } from './routes/retrospective.ts';
+import { mountStocktakeRoutes } from './routes/stocktake.ts';
 import { mountUiRoutes } from './routes/ui.ts';
 
 export interface CreateAppDeps {
@@ -56,6 +57,7 @@ export function createApp(config: CalliopeConfig, deps: CreateAppDeps = {}) {
   mountBriefingRoutes(app, { clients, repo });
   mountCalendarRoutes(app, { config, clients, repo });
   mountRetrospectiveRoutes(app, { clients, repo });
+  mountStocktakeRoutes(app, { config, clients, repo });
   mount<private-reference-004>Routes(app, { clients, repo });
 
   return app;

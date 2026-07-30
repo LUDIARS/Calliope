@@ -6,7 +6,9 @@ import type { CalliopeConfig } from '../config.ts';
 import type { CalliopeRepository, ConfirmationStatus } from '../db/repository.ts';
 import { makeRescheduleEngine } from '../reschedule/engine.ts';
 import { CalendarPrerequisiteError, makeCalendarEngine } from '../calendar/engine.ts';
-import { upstreamFailure } from './errors.ts';
+import { applyStocktakeProposals } from '../stocktake/apply.ts';
+import { stocktakeConfirmationPayloadSchema } from '../stocktake/payload.ts';
+import { unconfigured, upstreamFailure } from './errors.ts';
 
 const decisionSchema = z.object({
   decision: z.enum(['approve', 'reject']),
@@ -53,7 +55,7 @@ export function mountConfirmationRoutes(app: Hono, deps: ConfirmationRoutesDeps)
     const now = new Date();
     if (row.expiresAt <= now.toISOString()) {
       await deps.repo.expireConfirmation(id, now.toISOString(), '24h expiry');
-      if (row.kind === 'calendar_write') {
+      if (row.kind === 'calendar_write' || row.kind === 'task_stocktake') {
         return c.json({ error: 'confirmation_expired' }, 409);
       }
       const reproposal = await reschedule.trigger({ trigger: 'confirmation_expired', refresh: false });
@@ -63,6 +65,20 @@ export function mountConfirmationRoutes(app: Hono, deps: ConfirmationRoutesDeps)
       return c.json({ confirmation: await deps.repo.rejectConfirmation(
         id, parsed.data.decidedBy, parsed.data.reason ?? '', now.toISOString(),
       ) });
+    }
+    if (row.kind === 'task_stocktake') {
+      const payload = stocktakeConfirmationPayloadSchema.safeParse(row.payload);
+      if (!payload.success) return c.json({ error: 'invalid_confirmation_payload' }, 500);
+      if (!deps.clients.actio) throw unconfigured('actio');
+      try {
+        const result = await applyStocktakeProposals(deps.clients.actio, payload.data.proposals);
+        const confirmation = await deps.repo.approveExternalConfirmation(
+          id, parsed.data.decidedBy, now.toISOString(), result,
+        );
+        return c.json({ confirmation, result });
+      } catch (error) {
+        return upstreamFailure(error);
+      }
     }
     if (row.kind === 'calendar_write') {
       const payload = calendarPayloadSchema.safeParse(row.payload);

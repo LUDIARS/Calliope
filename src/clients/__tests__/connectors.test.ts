@@ -106,7 +106,8 @@ describe('upstream connectors', () => {
     const briefing = {
       date: '2026-07-11', generatedAt: '2026-07-10T23:00:00.000Z', planId: null,
       todayPlan: [], decisions: [], alerts: [], upcomingDeadlines: [], humanGates: [],
-      summary: { tasks: 0, decisions: 0, alerts: 0, humanGates: 0 },
+      stocktake: null,
+      summary: { tasks: 0, decisions: 0, alerts: 0, humanGates: 0, stocktakeProposals: 0 },
     };
     await expect(client.publishDailyBriefing(briefing)).resolves.toMatchObject({ delivered: 1 });
     expect(fetchMock).toHaveBeenCalledWith('http://nuntius.test/api/topics/calliope.daily/publish', expect.objectContaining({

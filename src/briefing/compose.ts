@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { stocktakeSummarySchema } from '../stocktake/payload.ts';
 
 const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -25,8 +26,9 @@ export interface BriefingSprint {
 
 export interface BriefingConfirmation {
   id: string;
-  kind: 'plan_apply' | 'reschedule' | 'calendar_write';
+  kind: 'plan_apply' | 'reschedule' | 'calendar_write' | 'task_stocktake';
   expiresAt: string;
+  payload?: unknown;
 }
 
 export interface BriefingRisk {
@@ -69,9 +71,21 @@ export function composeDailyBriefing(input: ComposeBriefingInput) {
     lanes.set(entry.lane, laneEntries);
   }
   const byLane = [...lanes].map(([lane, laneEntries]) => ({ lane, entries: laneEntries }));
-  const decisions = input.confirmations
-    .filter((item) => Date.parse(item.expiresAt) > input.now.getTime())
-    .map(({ id, kind, expiresAt }) => ({ id, kind, expiresAt }));
+  const liveConfirmations = input.confirmations
+    .filter((item) => Date.parse(item.expiresAt) > input.now.getTime());
+  const decisions = liveConfirmations.map(({ id, kind, expiresAt }) => ({ id, kind, expiresAt }));
+  // 棚卸しサマリ (task-lifecycle §G3): 最新の pending task_stocktake confirmation の
+  // 集計値だけを載せる。 新たな上流呼び出しはせず、 個人データも持ち込まない。
+  const stocktake = (() => {
+    const active = liveConfirmations.find((item) => item.kind === 'task_stocktake');
+    if (!active) return null;
+    const summary = stocktakeSummarySchema.safeParse(
+      active.payload && typeof active.payload === 'object'
+        ? (active.payload as { summary?: unknown }).summary
+        : undefined,
+    );
+    return summary.success ? { confirmationId: active.id, ...summary.data } : null;
+  })();
   const sprintAlerts = input.sprints.flatMap((sprint) => {
     const parsed = sprint.latestCurve ? curveHealthSchema.safeParse(sprint.latestCurve.gompertzParams) : null;
     return parsed?.success && parsed.data.health.status === 'at_risk'
@@ -104,11 +118,13 @@ export function composeDailyBriefing(input: ComposeBriefingInput) {
     alerts: [...sprintAlerts, ...riskAlerts],
     upcomingDeadlines,
     humanGates,
+    stocktake,
     summary: {
       tasks: entries.length,
       decisions: decisions.length,
       alerts: sprintAlerts.length + riskAlerts.length,
       humanGates: humanGates.length,
+      stocktakeProposals: stocktake?.proposals ?? 0,
     },
   };
 }

@@ -2,7 +2,7 @@ import { and, eq, lt } from 'drizzle-orm';
 import type { CalliopeDb } from '../client.ts';
 import { confirmation, rescheduleLog } from '../schema.ts';
 
-export type ConfirmationKind = 'plan_apply' | 'reschedule' | 'calendar_write';
+export type ConfirmationKind = 'plan_apply' | 'reschedule' | 'calendar_write' | 'task_stocktake';
 export type ConfirmationStatus = 'pending' | 'approved' | 'rejected' | 'expired';
 
 export interface ConfirmationInput {
