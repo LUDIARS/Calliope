@@ -209,6 +209,36 @@ export interface BusyEvent {
   end: string;
 }
 
+/**
+ * Excubitor /api/v1/services の1行。serviceRowView は catalog 由来の値を行へ平坦化する
+ * 場合があるため、行と catalog_snapshot の両方を許す (取り出しは client 側で合成する)。
+ */
+export const excubitorServiceRowSchema = z.object({
+  code: z.string().min(1).max(120).optional(),
+  name: z.string().max(120).optional(),
+  project_code: z.string().max(120).optional(),
+  tier: z.string().max(40).optional(),
+  port: z.union([z.number(), z.string()]).nullable().optional(),
+  state: z.string().max(40).optional(),
+  catalog_snapshot: z.object({
+    code: z.string().max(120).optional(),
+    name: z.string().max(120).optional(),
+    project_code: z.string().max(120).optional(),
+    tier: z.string().max(40).optional(),
+    port: z.union([z.number(), z.string()]).nullable().optional(),
+    description: z.string().max(500).optional(),
+    disabled: z.boolean().optional(),
+  }).nullable().optional(),
+}).passthrough();
+
+// services を既定値で補わない: 形が変わった応答を「0 件の catalog」として受けると、
+// 全行が inCatalog=false へ倒れたまま synced と報告されてしまう (無言フォールバック禁止)。
+export const excubitorServicesResponseSchema = z.object({
+  services: z.array(excubitorServiceRowSchema).max(5_000),
+});
+
+export type ExcubitorServiceRow = z.infer<typeof excubitorServiceRowSchema>;
+
 export const projecthubProjectMemberSchema = z.object({
   userId: z.string().min(1),
   role: z.enum(['producer', 'member']),

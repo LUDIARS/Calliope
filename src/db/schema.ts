@@ -167,6 +167,83 @@ export const connectorState = sqliteTable('connector_state', {
   updatedAt: text('updated_at').notNull(),
 });
 
+/**
+ * サービスマップ (Villa /map から移設): 家PC 台帳。
+ * PC は割当先のノードであり個人データは持たない (スペック・置き場所・稼働方針のみ)。
+ */
+export const serviceMapPc = sqliteTable('service_map_pc', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  location: text('location').notNull().default(''),
+  role: text('role').notNull().default(''),
+  mode: text('mode').notNull().default('手動稼働'),
+  priority: text('priority', { enum: ['S', 'A', 'B', 'C'] }).notNull().default('A'),
+  os: text('os').notNull().default(''),
+  cpu: text('cpu').notNull().default(''),
+  ram: text('ram').notNull().default(''),
+  gpu: text('gpu').notNull().default(''),
+  storage: text('storage').notNull().default(''),
+  note: text('note').notNull().default(''),
+  updatedAt: text('updated_at').notNull(),
+});
+
+/** 事業ドメイン: サービスグループを束ねてロードマップを生成する単位。 */
+export const serviceMapDomain = sqliteTable('service_map_domain', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  note: text('note').notNull().default(''),
+  seq: integer('seq').notNull().default(0),
+  updatedAt: text('updated_at').notNull(),
+});
+
+/** サービスグループ: PC 割当と事業ドメイン所属の単位 (Villa の group を継承)。 */
+export const serviceMapGroup = sqliteTable('service_map_group', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  domainId: text('domain_id').references(() => serviceMapDomain.id, { onDelete: 'set null' }),
+  updatedAt: text('updated_at').notNull(),
+}, (table) => [
+  index('idx_service_map_group_domain').on(table.domainId),
+]);
+
+/**
+ * サービス台帳。正本は Excubitor catalog で、ここは同期スナップショット + 割当。
+ * groupIds / pcIds は複数所属を許す (Villa の workload 形を継承)。
+ */
+export const serviceMapService = sqliteTable('service_map_service', {
+  id: text('id').primaryKey(),
+  code: text('code').notNull(),
+  name: text('name').notNull(),
+  projectCode: text('project_code').notNull(),
+  tier: text('tier').notNull().default('saas'),
+  port: integer('port'),
+  description: text('description').notNull().default(''),
+  cadence: text('cadence').notNull().default('常時'),
+  load: text('load', { enum: ['heavy', 'medium', 'light'] }).notNull().default('medium'),
+  groupIds: text('group_ids', { mode: 'json' }).$type<string[]>().notNull(),
+  pcIds: text('pc_ids', { mode: 'json' }).$type<string[]>().notNull(),
+  runState: text('run_state').notNull().default('unknown'),
+  /** 直近同期の catalog に存在したか。消えたサービスは false で残し、割当を失わない。 */
+  inCatalog: integer('in_catalog', { mode: 'boolean' }).notNull().default(true),
+  /** catalog 外で手動追加したサービス (同期で消さない)。 */
+  manual: integer('manual', { mode: 'boolean' }).notNull().default(false),
+  lastSyncedAt: text('last_synced_at'),
+  updatedAt: text('updated_at').notNull(),
+}, (table) => [
+  uniqueIndex('uq_service_map_service_code').on(table.code),
+]);
+
+/** 事業ドメイン別ロードマップの生成スナップショット (supersede で版管理)。 */
+export const serviceMapRoadmap = sqliteTable('service_map_roadmap', {
+  id: text('id').primaryKey(),
+  status: text('status', { enum: ['active', 'superseded'] }).notNull().default('active'),
+  payload: text('payload', { mode: 'json' }).$type<unknown>().notNull(),
+  generatedAt: text('generated_at').notNull(),
+  supersededBy: text('superseded_by'),
+}, (table) => [
+  index('idx_service_map_roadmap_status').on(table.status),
+]);
+
 export const planRelations = relations(plan, ({ many }) => ({
   entries: many(planEntry),
 }));

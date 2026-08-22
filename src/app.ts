@@ -23,10 +23,23 @@ import { mountVelocityRoutes } from './routes/velocity.ts';
 import { mountRetrospectiveRoutes } from './routes/retrospective.ts';
 import { mountStocktakeRoutes } from './routes/stocktake.ts';
 import { mountUiRoutes } from './routes/ui.ts';
+import { mountServiceMapRoutes } from './routes/servicemap.ts';
 
 export interface CreateAppDeps {
   db?: ReturnType<typeof openDb>;
   clients?: CalliopeClients;
+}
+
+const SERVICE_MAP_PREFIX = '/service-map';
+
+/**
+ * サービスマップは同一オリジンの画面専用で、認可は Cloudflare Access が正
+ * (admin Bearer は任意の追加ゲート)。ワイルドカード CORS のままだと利用者の
+ * ブラウザに開いた任意のサイトから origin へ read/mutate できてしまうため、
+ * この経路だけ CORS 許可から外す。他経路の挙動は従来どおり。
+ */
+function isServiceMapPath(path: string): boolean {
+  return path === SERVICE_MAP_PREFIX || path.startsWith(`${SERVICE_MAP_PREFIX}/`);
 }
 
 export function createApp(config: CalliopeConfig, deps: CreateAppDeps = {}) {
@@ -36,12 +49,14 @@ export function createApp(config: CalliopeConfig, deps: CreateAppDeps = {}) {
   const clients = deps.clients ?? makeClients(config);
 
   app.use('*', cors({
-    origin: '*',
+    origin: (_origin, c) => (isServiceMapPath(c.req.path) ? null : '*'),
     allowMethods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
     allowHeaders: ['content-type', 'authorization'],
   }));
   app.use('/api/*', apiAuth(config.serviceToken));
   mountUiRoutes(app);
+  // サービスマップは /api/* とは別系統の認可 (公開 read + admin Bearer)。apiAuth は掛けない。
+  mountServiceMapRoutes(app, { config, clients, repo });
 
   mountHealthRoutes(app, { config, clients, repo });
   mountUpstreamRoutes(app, { clients });

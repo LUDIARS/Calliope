@@ -1,5 +1,6 @@
 import type { CalliopeConfig } from '../config.ts';
 import { makeActioClient } from './actio.ts';
+import { makeExcubitorClient } from './excubitor.ts';
 import { makeProjectHubClient } from './projecthub.ts';
 import { makeMemoriaClient } from './memoria.ts';
 import { makeNuntiusClient } from './nuntius.ts';
@@ -15,6 +16,9 @@ export function makeClients(config: CalliopeConfig) {
       : null,
     memoria: config.memoria.baseUrl
       ? makeMemoriaClient({ baseUrl: config.memoria.baseUrl, token: config.memoria.token })
+      : null,
+    excubitor: config.excubitor?.baseUrl
+      ? makeExcubitorClient({ baseUrl: config.excubitor.baseUrl, token: config.excubitor.token })
       : null,
     nuntius: config.nuntiusBaseUrl && config.nuntiusToken
       ? makeNuntiusClient({ baseUrl: config.nuntiusBaseUrl, token: config.nuntiusToken })

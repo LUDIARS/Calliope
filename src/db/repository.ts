@@ -9,6 +9,7 @@ import { makeRiskRepository } from './repositories/risk.ts';
 import { makeSprintRepository } from './repositories/sprint.ts';
 import { makeVelocityRepository } from './repositories/velocity.ts';
 import { makeCalendarRepository } from './repositories/calendar.ts';
+import { makeServiceMapRepository } from './repositories/servicemap.ts';
 
 export type { ConnectorHealth, ConnectorStateInput } from './repositories/connector.ts';
 export type { ConfirmedPlanApplyInput } from './repositories/autonomy.ts';
@@ -27,7 +28,20 @@ export type {
 } from './repositories/sprint.ts';
 export type { NewVelocity, VelocityFilter } from './repositories/velocity.ts';
 export type { CalendarLinkInput } from './repositories/calendar.ts';
+export type {
+  ServiceMapDomainInput,
+  ServiceMapDomainRow,
+  ServiceMapGroupInput,
+  ServiceMapGroupRow,
+  ServiceMapPcInput,
+  ServiceMapPcRow,
+  ServiceMapServiceInput,
+  ServiceMapServicePatch,
+  ServiceMapServiceRow,
+  ServiceMapVillaImportInput,
+} from './repositories/servicemap.ts';
 
+/** @implements SPEC-SERVICE-MAP-PERSISTENCE (service-map repository composition) */
 export function makeRepository(db: CalliopeDb) {
   return {
     ...makeCalendarRepository(db),
@@ -40,6 +54,7 @@ export function makeRepository(db: CalliopeDb) {
     ...makeRiskRepository(db),
     ...makeSprintRepository(db),
     ...makeVelocityRepository(db),
+    ...makeServiceMapRepository(db),
   };
 }
 

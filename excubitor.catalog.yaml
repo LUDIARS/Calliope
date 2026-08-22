@@ -22,6 +22,10 @@ services:
       ACTIO_BASE_URL: http://127.0.0.1:3000
       SCHEDULA_BASE_URL: http://127.0.0.1:3300
       MEMORIA_BASE_URL: http://127.0.0.1:5180
+      # サービスマップの同期元 (稼働状態と catalog の正本)。
+      # 認可は Cloudflare Access の三層 (public/ルート/admin) が正で、
+      # CALLIOPE_SERVICEMAP_ADMIN_TOKEN は秘密のため catalog には書かない。
+      EXCUBITOR_BASE_URL: http://127.0.0.1:17332
     autostart: false
     health:
       type: http

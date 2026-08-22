@@ -75,6 +75,17 @@ Open `/` for the responsive command dashboard. It reads the existing plan, sprin
 
 The weekly report runs Monday at 08:00 JST by default. Set `CALLIOPE_WEEKLY_RETROSPECTIVE=off` to disable scheduling.
 
+## サービスマップ (Villa /map から移設)
+
+LUDIARS サービスを**事業ドメイン別**に束ね、検索 / 稼働状態 (Excubitor 観測) /
+ロードマップを表示する。経路認証は Cloudflare Access の三層:
+`/service-map/public` 以下は匿名可 (ポート・PC を含まないサニタイズ read)、
+`/service-map` ルート以下は CF 認証ユーザー (フル閲覧)、`/service-map/admin` 以下は
+CF 管理者 (編集・強制同期・ロードマップ生成・Villa データ移行。
+`CALLIOPE_SERVICEMAP_ADMIN_TOKEN` 設定時はアプリ層 Bearer も要求)。
+サービス一覧は Excubitor catalog を正本として閲覧時に遅延自動同期する (既定 10 分)。
+詳細は [`docs/design/service-map.md`](docs/design/service-map.md)。
+
 ## P4 Calendar API
 
 | Method | Path | Purpose |

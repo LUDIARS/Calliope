@@ -13,6 +13,9 @@ Calliope は計画成果物だけをローカル SQLite に保持する。タス
 | curve_snapshot | user | Calliope | SQLite | 要 | sprint参照と集計曲線のみ |
 | goal_risk_snapshot | user | Calliope | SQLite | 要 | goal_ref、日次予測・deadline・risk要因の集計値のみ |
 | connector_state | master | Calliope | SQLite | 不要 | service名・health・cursorのみ。tokenやerror本文を保存しない |
+| service_map_pc / service_map_domain / service_map_group | master | Calliope | SQLite | 不要 | 家PCスペック・事業ドメイン・グループの台帳。個人データなし |
+| service_map_service | master | Excubitor catalog | SQLite | 不要 | catalog同期スナップショット+割当(groupIds/pcIds)。ポートは CF 認証済み full API のみで返す |
+| service_map_roadmap | user | Calliope | SQLite | 不要 | ドメイン別ロードマップ生成物 (supersede版管理)。repo名・importance・優先度集計のみ |
 | calendar_link | user | Schedula | SQLite参照 | 要 | calendar_refは primary aliasまたはSchedula参照IDのみ。生Google calendar ID/emailを保存しない |
 | task / goal | master | Actio | 非保存（task_ref参照のみ） | 要 | Bearer付きread。Calliope DBへ本文を複製しない |
 | event / personal event | user | Schedula | 非保存（freeBusyへ一時変換） | 要 | 時刻区間だけをメモリ上で合成し、個人属性を保存しない |

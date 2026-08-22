@@ -16,6 +16,10 @@ export interface CalliopeConfig {
   dbPath: string;
   agentLanes: number;
   serviceToken: string | null;
+  /** サービスマップ admin API の任意追加 Bearer。未設定時の認可は Cloudflare Access に委ねる。 */
+  serviceMapAdminToken?: string | null;
+  /** サービスマップの遅延自動同期の鮮度 (分)。閲覧時にこの分数より古ければ Excubitor から取り直す。 */
+  serviceMapSyncMinutes?: number;
   llmEstimation: boolean;
   dailyOrchestration?: boolean;
   calendarAutoWrite?: boolean;
@@ -29,6 +33,8 @@ export interface CalliopeConfig {
   actio: UpstreamConfig;
   schedula: UpstreamConfig;
   memoria: UpstreamConfig;
+  /** Excubitor (サービス catalog / 稼働状態の正本)。サービスマップの同期元。 */
+  excubitor?: UpstreamConfig;
   /** PROJECTHUB Hub projects レジストリ接続 (docs/design/projecthub-pm.md §H3)。 H3 実装分のみ、任意設定。 */
   projecthub?: ProjectHubUpstreamConfig;
   concordiaBaseUrl: string | null;
@@ -59,6 +65,8 @@ export function loadConfig(): CalliopeConfig {
     dbPath: process.env.CALLIOPE_DB_PATH ?? './data/calliope.db',
     agentLanes: positiveInteger(process.env.CALLIOPE_AGENT_LANES, 3, 'CALLIOPE_AGENT_LANES'),
     serviceToken: firstEnv('CALLIOPE_SERVICE_TOKEN'),
+    serviceMapAdminToken: firstEnv('CALLIOPE_SERVICEMAP_ADMIN_TOKEN'),
+    serviceMapSyncMinutes: positiveInteger(process.env.CALLIOPE_SERVICEMAP_SYNC_MINUTES, 10, 'CALLIOPE_SERVICEMAP_SYNC_MINUTES'),
     llmEstimation: process.env.CALLIOPE_LLM_ESTIMATION !== 'off',
     dailyOrchestration: process.env.CALLIOPE_DAILY_ORCHESTRATION !== 'off',
     calendarAutoWrite: process.env.CALLIOPE_CALENDAR_AUTO_WRITE === 'on',
@@ -80,6 +88,10 @@ export function loadConfig(): CalliopeConfig {
     memoria: {
       baseUrl: firstEnv('MEMORIA_BASE_URL', 'MEMORIA_API_URL', 'MEMORIA_URL'),
       token: firstEnv('MEMORIA_TOKEN'),
+    },
+    excubitor: {
+      baseUrl: firstEnv('EXCUBITOR_BASE_URL', 'EXCUBITOR_API_URL', 'EXCUBITOR_URL'),
+      token: firstEnv('EXCUBITOR_TOKEN'),
     },
     projecthub: {
       baseUrl: firstEnv('PROJECTHUB_BASE_URL', 'PROJECTHUB_API_URL', 'PROJECTHUB_URL'),

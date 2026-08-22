@@ -1,11 +1,17 @@
 {
   "name": "service-map",
-  "description": "サービスマップ。 task_ref / project_ref の語彙で、 どのサービスが実体を持つかの対応づけを保持する。",
+  "description": "サービスマップ。 task_ref / project_ref の語彙で、 どのサービスが実体を持つかの対応づけを保持し、 Excubitor から取り込んだ稼働実体を事業ドメイン別に可視化する。",
   "presetRules": [],
   "templateRules": [],
   "membership": [
     {
       "pathPattern": "(^|/)src/refs\\.ts$"
+    },
+    {
+      "pathPattern": "(^|/)src/servicemap/(?:.*/)?[^/]+$"
+    },
+    {
+      "pathPattern": "(^|/)docs/design/service-map\\.md$"
     }
   ]
 }
