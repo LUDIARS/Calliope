@@ -1,0 +1,14 @@
+{
+  "name": "schedule-calendar",
+  "description": "時間軸の管理。 カレンダー連携とスケジューラ、 予定の展開。",
+  "presetRules": [],
+  "templateRules": [],
+  "membership": [
+    {
+      "pathPattern": "(^|/)src/calendar/(?:.*/)?[^/]+$"
+    },
+    {
+      "pathPattern": "(^|/)src/scheduler/(?:.*/)?[^/]+$"
+    }
+  ]
+}

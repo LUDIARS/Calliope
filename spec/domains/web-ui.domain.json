@@ -1,0 +1,11 @@
+{
+  "name": "web-ui",
+  "description": "ブラウザ側の画面。 進捗とスプリントの表示。",
+  "presetRules": [],
+  "templateRules": [],
+  "membership": [
+    {
+      "pathPattern": "(^|/)src/ui/(?:.*/)?[^/]+$"
+    }
+  ]
+}

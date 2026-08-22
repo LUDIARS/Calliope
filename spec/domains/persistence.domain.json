@@ -1,0 +1,14 @@
+{
+  "name": "persistence",
+  "description": "永続化。 スキーマとリポジトリ。",
+  "presetRules": [],
+  "templateRules": [],
+  "membership": [
+    {
+      "pathPattern": "(^|/)src/db/(?:.*/)?[^/]+$"
+    },
+    {
+      "pathPattern": "(^|/)drizzle\\.config\\.ts$"
+    }
+  ]
+}

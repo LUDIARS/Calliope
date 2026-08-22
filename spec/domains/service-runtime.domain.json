@@ -1,0 +1,14 @@
+{
+  "name": "service-runtime",
+  "description": "プロセスとしての Calliope。 起動、 設定、 共有ユーティリティ、 テスト土台。",
+  "presetRules": [],
+  "templateRules": [],
+  "membership": [
+    {
+      "pathPattern": "(^|/)src/(?:index|app|config)\\.ts$"
+    },
+    {
+      "pathPattern": "(^|/)src/__tests__/(?:.*/)?[^/]+$"
+    }
+  ]
+}

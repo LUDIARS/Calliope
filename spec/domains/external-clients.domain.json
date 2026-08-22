@@ -1,0 +1,11 @@
+{
+  "name": "external-clients",
+  "description": "外部サービスの呼び出し境界。 各クライアント実装をここに閉じる。",
+  "presetRules": [],
+  "templateRules": [],
+  "membership": [
+    {
+      "pathPattern": "(^|/)src/clients/(?:.*/)?[^/]+$"
+    }
+  ]
+}

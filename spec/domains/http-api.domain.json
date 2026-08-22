@@ -1,0 +1,11 @@
+{
+  "name": "http-api",
+  "description": "HTTP の受口。 ルート登録とリクエスト/レスポンスの形。",
+  "presetRules": [],
+  "templateRules": [],
+  "membership": [
+    {
+      "pathPattern": "(^|/)src/routes/(?:.*/)?[^/]+$"
+    }
+  ]
+}

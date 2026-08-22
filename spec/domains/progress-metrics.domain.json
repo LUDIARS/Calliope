@@ -1,0 +1,17 @@
+{
+  "name": "progress-metrics",
+  "description": "進捗の指標。 velocity・burndown・リスク・停滞の算出と、 スプリント後の振り返り集計。",
+  "presetRules": [],
+  "templateRules": [],
+  "membership": [
+    {
+      "pathPattern": "(^|/)src/velocity/(?:.*/)?[^/]+$"
+    },
+    {
+      "pathPattern": "(^|/)src/risk/(?:.*/)?[^/]+$"
+    },
+    {
+      "pathPattern": "(^|/)src/retrospective/(?:.*/)?[^/]+$"
+    }
+  ]
+}

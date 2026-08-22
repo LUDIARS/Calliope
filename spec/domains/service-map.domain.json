@@ -1,0 +1,11 @@
+{
+  "name": "service-map",
+  "description": "サービスマップ。 task_ref / project_ref の語彙で、 どのサービスが実体を持つかの対応づけを保持する。",
+  "presetRules": [],
+  "templateRules": [],
+  "membership": [
+    {
+      "pathPattern": "(^|/)src/refs\\.ts$"
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "name": "sprint-planning",
+  "description": "スプリントの計画。 見積り、 優先順位、 リスケ、 バックログの並べ替え・棚卸しを所有する。",
+  "presetRules": [],
+  "templateRules": [],
+  "membership": [
+    {
+      "pathPattern": "(^|/)src/planning/(?:.*/)?[^/]+$"
+    },
+    {
+      "pathPattern": "(^|/)src/estimation/(?:.*/)?[^/]+$"
+    },
+    {
+      "pathPattern": "(^|/)src/priority/(?:.*/)?[^/]+$"
+    },
+    {
+      "pathPattern": "(^|/)src/reschedule/(?:.*/)?[^/]+$"
+    },
+    {
+      "pathPattern": "(^|/)src/sprint/(?:.*/)?[^/]+$"
+    },
+    {
+      "pathPattern": "(^|/)src/stocktake/(?:.*/)?[^/]+$"
+    }
+  ]
+}

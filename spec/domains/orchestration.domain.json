@@ -1,0 +1,14 @@
+{
+  "name": "orchestration",
+  "description": "各機能の呼び出し順序の組み立て。 briefing の生成を含む、 横断的な取りまとめ。",
+  "presetRules": [],
+  "templateRules": [],
+  "membership": [
+    {
+      "pathPattern": "(^|/)src/orchestration/(?:.*/)?[^/]+$"
+    },
+    {
+      "pathPattern": "(^|/)src/briefing/(?:.*/)?[^/]+$"
+    }
+  ]
+}
