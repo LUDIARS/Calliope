@@ -13,5 +13,10 @@ logs/
 /data/*.db-*
 !/data/.gitkeep
 
-# Anatomia のローカル状態 (ドメイン定義の正本は spec/domains/)
-.anatomia/
+# Anatomia のローカル状態 (事業ドメイン定義の正本は spec/domains/)。
+# 例外は layers.json — これは解析キャッシュではなく、 リポジトリが持つプログラムドメイン
+# (層) の宣言。 追跡しないと Revisor の二層ゲートから層が見えず、 変更アンカーが全部
+# 「未分類」になる。 なお `.anatomia/` とディレクトリごと除外する形にはしないこと —
+# git は除外ディレクトリ内のファイルを `!` で再包含できず、 layers.json をコミットできなくなる。
+.anatomia/*
+!.anatomia/layers.json

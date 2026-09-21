@@ -12,6 +12,9 @@
     },
     {
       "pathPattern": "(^|/)src/tasks/(?:.*/)?[^/]+$"
+    },
+    {
+      "pathPattern": "(^|/)\\.anatomia/layers\\.json$"
     }
   ]
 }

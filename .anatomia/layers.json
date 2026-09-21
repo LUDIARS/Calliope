@@ -1,0 +1,58 @@
+{
+  "$comment": "Anatomia のプログラムドメイン (二層判定の下半分) 用の層宣言。 これは解析キャッシュではなくリポジトリが持つ設定なので追跡する (.gitignore で layers.json だけ再包含している)。 glob は repo 相対パスへ完全一致で当たり、 `*` は 1 階層・ `**` は任意階層。 ローダー (Anatomia src/domains/program/config.ts) が glob 文字列でソートしてから先勝ちで評価するため記述順は効かず、 同一ディレクトリでは `<dir>/*` が個別ファイル glob を必ず覆い隠す。 したがって glob 同士を重ねないこと — src 直下だけはファイル単位で層が割れるので `src/*` の総取りを置かずに 4 本を列挙している (新しい src 直下モジュールを足したらここにも 1 行足す)。 層名は Anatomia の builtin 4 層 (infrastructure < domain < application < presentation) に合わせてあり、 order/allow を宣言しないことで builtin の依存方向判定をそのまま使う。 確認は `anatomia domains program --repo .` で unclassified 0 を保つこと。",
+
+  "layers": [
+    { "glob": "*", "layer": "infrastructure" },
+
+    { "glob": "src/config.ts", "layer": "infrastructure" },
+    { "glob": "src/clients/*", "layer": "infrastructure" },
+    { "glob": "src/clients/__tests__/*", "layer": "infrastructure" },
+    { "glob": "src/db/*", "layer": "infrastructure" },
+    { "glob": "src/db/repositories/*", "layer": "infrastructure" },
+    { "glob": "src/db/migrations/*", "layer": "infrastructure" },
+    { "glob": "src/db/migrations/meta/*", "layer": "infrastructure" },
+
+    { "glob": "src/refs.ts", "layer": "domain" },
+    { "glob": "src/__tests__/*", "layer": "domain" },
+    { "glob": "src/briefing/*", "layer": "domain" },
+    { "glob": "src/briefing/__tests__/*", "layer": "domain" },
+    { "glob": "src/calendar/*", "layer": "domain" },
+    { "glob": "src/estimation/*", "layer": "domain" },
+    { "glob": "src/estimation/__tests__/*", "layer": "domain" },
+    { "glob": "src/planning/*", "layer": "domain" },
+    { "glob": "src/planning/__tests__/*", "layer": "domain" },
+    { "glob": "src/priority/*", "layer": "domain" },
+    { "glob": "src/priority/__tests__/*", "layer": "domain" },
+    { "glob": "src/reschedule/*", "layer": "domain" },
+    { "glob": "src/reschedule/__tests__/*", "layer": "domain" },
+    { "glob": "src/retrospective/*", "layer": "domain" },
+    { "glob": "src/retrospective/__tests__/*", "layer": "domain" },
+    { "glob": "src/risk/*", "layer": "domain" },
+    { "glob": "src/risk/__tests__/*", "layer": "domain" },
+    { "glob": "src/scheduler/*", "layer": "domain" },
+    { "glob": "src/scheduler/__tests__/*", "layer": "domain" },
+    { "glob": "src/servicemap/*", "layer": "domain" },
+    { "glob": "src/servicemap/__tests__/*", "layer": "domain" },
+    { "glob": "src/sprint/*", "layer": "domain" },
+    { "glob": "src/sprint/__tests__/*", "layer": "domain" },
+    { "glob": "src/stocktake/*", "layer": "domain" },
+    { "glob": "src/stocktake/__tests__/*", "layer": "domain" },
+    { "glob": "src/taskgen/*", "layer": "domain" },
+    { "glob": "src/taskgen/__tests__/*", "layer": "domain" },
+    { "glob": "src/tasks/*", "layer": "domain" },
+    { "glob": "src/velocity/*", "layer": "domain" },
+    { "glob": "src/velocity/__tests__/*", "layer": "domain" },
+
+    { "glob": "src/app.ts", "layer": "application" },
+    { "glob": "src/index.ts", "layer": "application" },
+    { "glob": "src/orchestration/*", "layer": "application" },
+    { "glob": "src/orchestration/__tests__/*", "layer": "application" },
+
+    { "glob": "src/routes/*", "layer": "presentation" },
+    { "glob": "src/routes/__tests__/*", "layer": "presentation" },
+    { "glob": "src/ui/*", "layer": "presentation" },
+    { "glob": "src/servicemap/ui/*", "layer": "presentation" }
+  ],
+
+  "mergeCouplingThreshold": 1
+}
