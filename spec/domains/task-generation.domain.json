@@ -1,0 +1,16 @@
+{
+  "name": "task-generation",
+  "description": "タスクの自動生成。 計画成果物から「Actio にあるべきなのに無いタスク」を検出し、 Decision Inbox (confirmation kind: task_create) の裁定を経てのみ Actio へ起票する。",
+  "presetRules": [],
+  "templateRules": [],
+  "membership": [
+    {
+      "pathPattern": "(^|/)src/taskgen/(?:.*/)?[^/]+$"
+    }
+  ],
+  "specRefs": [
+    "spec/feature/task-generation.md",
+    "spec/interface/task-generation-api.md",
+    "spec/architecture-domains.md"
+  ]
+}

@@ -16,6 +16,11 @@ export interface CalliopeConfig {
   dbPath: string;
   agentLanes: number;
   serviceToken: string | null;
+  /**
+   * クロスオリジンで `/api/*` を叩けるオリジンの allowlist (`CALLIOPE_CORS_ORIGINS`, カンマ区切り)。
+   * 既定は空 = 同一オリジンのみ。 ダッシュボードは同一オリジン配信なので既定で足りる。
+   */
+  corsOrigins?: string[];
   /** サービスマップ admin API の任意追加 Bearer。未設定時の認可は Cloudflare Access に委ねる。 */
   serviceMapAdminToken?: string | null;
   /** サービスマップの遅延自動同期の鮮度 (分)。閲覧時にこの分数より古ければ Excubitor から取り直す。 */
@@ -28,6 +33,8 @@ export interface CalliopeConfig {
   projecthubWeeklyReport?: boolean;
   /** docs/design/task-lifecycle.md §G3: タスク棚卸し (週次 + on-demand) を有効化するか。 */
   taskStocktake?: boolean;
+  /** docs/design/task-lifecycle.md §G2: タスク自動生成 (日次 + on-demand) を有効化するか。 */
+  taskGenerate?: boolean;
   /** §G3 検出閾値 (env 可変)。 aging 既定 14 日、 priority 乖離既定 2 バケット。 */
   stocktake?: { agingDays: number; priorityGap: number };
   actio: UpstreamConfig;
@@ -52,7 +59,9 @@ function firstEnv(...keys: string[]): string | null {
 }
 
 function positiveInteger(value: string | undefined, fallback: number, name: string): number {
-  const parsed = Number(value ?? fallback);
+  // 空文字は「未設定」扱い (`.env` の `KEY=` は本リポの既定表記)。 Number('') は 0 になり
+  // 起動を落とすため、 firstEnv と同じ空値セマンティクスに揃える。
+  const parsed = Number(value === undefined || value === '' ? fallback : value);
   if (!Number.isInteger(parsed) || parsed <= 0) {
     throw new Error(`${name} must be a positive integer`);
   }
@@ -65,6 +74,10 @@ export function loadConfig(): CalliopeConfig {
     dbPath: process.env.CALLIOPE_DB_PATH ?? './data/calliope.db',
     agentLanes: positiveInteger(process.env.CALLIOPE_AGENT_LANES, 3, 'CALLIOPE_AGENT_LANES'),
     serviceToken: firstEnv('CALLIOPE_SERVICE_TOKEN'),
+    corsOrigins: (firstEnv('CALLIOPE_CORS_ORIGINS') ?? '')
+      .split(',')
+      .map((origin) => origin.trim())
+      .filter(Boolean),
     serviceMapAdminToken: firstEnv('CALLIOPE_SERVICEMAP_ADMIN_TOKEN'),
     serviceMapSyncMinutes: positiveInteger(process.env.CALLIOPE_SERVICEMAP_SYNC_MINUTES, 10, 'CALLIOPE_SERVICEMAP_SYNC_MINUTES'),
     llmEstimation: process.env.CALLIOPE_LLM_ESTIMATION !== 'off',
@@ -73,6 +86,7 @@ export function loadConfig(): CalliopeConfig {
     weeklyRetrospective: process.env.CALLIOPE_WEEKLY_RETROSPECTIVE !== 'off',
     projecthubWeeklyReport: process.env.CALLIOPE_PROJECTHUB_WEEKLY_REPORT !== 'off',
     taskStocktake: process.env.CALLIOPE_TASK_STOCKTAKE !== 'off',
+    taskGenerate: process.env.CALLIOPE_TASK_GENERATE !== 'off',
     stocktake: {
       agingDays: positiveInteger(process.env.CALLIOPE_STOCKTAKE_AGING_DAYS, 14, 'CALLIOPE_STOCKTAKE_AGING_DAYS'),
       priorityGap: positiveInteger(process.env.CALLIOPE_STOCKTAKE_PRIORITY_GAP, 2, 'CALLIOPE_STOCKTAKE_PRIORITY_GAP'),

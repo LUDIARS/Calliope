@@ -17,10 +17,10 @@ Calliope の品質基準は「上流を二重実装せず、同じ入力から�
 | unit | daily orchestration | 07:30 JST、日跨ぎ、timer停止 |
 | contract | upstream clients | 実path、Bearer、非2xx、Zod response shape |
 | integration | routes | 未設定503、上流502、service token 401、health公開 |
-| integration | plan lifecycle | generate→draft→apply→active→旧active supersede、reschedule_log transaction |
+| integration | plan lifecycle | generate→draft、計画horizon超過除外、apply→active→旧active supersede、reschedule_log transaction |
 | integration | sprint lifecycle / risk | create→activate→goal_eval取込→replan→curve/risk upsert→close→next planned、red遷移通知要求 |
-| integration | P3 autonomy | low-risk auto apply、高リスク409→approve、reject reason、expiry/stale、What-if無書込 |
-| integration | P4 calendar | freeBusy contract、calendar_write confirmation、opaque tag、event ID persistence、supersede reuse、explicit degrade |
+| integration | P3 autonomy | low-risk auto apply、高リスク409→approve、reject reason、非個人裁定alias、expiry/stale、What-if無書込 |
+| integration | P4 calendar | freeBusy contract、calendar_write confirmation、opaque calendar_ref伝播、opaque tag、event ID persistence、supersede reuse、explicit degrade |
 | integration | P5 dashboard/F7 | CSP/assets、weekly metrics/recommendations、Nuntius contract/skip、Monday timer cleanup |
 | migration | SQLite | 0000〜最新の初回適用と再適用、nullable/新カラムの実schema |
 

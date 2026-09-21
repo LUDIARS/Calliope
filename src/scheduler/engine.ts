@@ -138,11 +138,13 @@ export function makeSchedulerEngine(deps: SchedulerEngineDeps) {
             confidence: entryConfidence(velocity),
             isHumanGate: task.isHumanGate,
           };
-        });      const topo = topologicalSort(schedulable);
+        });
+      const topo = topologicalSort(schedulable);
       const start = planningNow;
       const end = new Date(start.getTime() + horizonDays * MS_PER_DAY);
-      const warnings: { unestimated: string[]; messages: string[] } = {
+      const warnings: { unestimated: string[]; outsideHorizon: string[]; messages: string[] } = {
         unestimated,
+        outsideHorizon: [],
         messages: [
           ...(velocities.length === 0 ? ['velocity unavailable: provisional confidence 0.2'] : []),
           ...(blockedByUnestimated.length > 0
@@ -162,11 +164,21 @@ export function makeSchedulerEngine(deps: SchedulerEngineDeps) {
         warnings.messages.push('schedula_unconfigured: human gates left pending');
       }
 
-      const entries = listSchedule(topo, {
+      const scheduledEntries = listSchedule(topo, {
         lanes: input.lanes ?? deps.config.agentLanes,
         startAt: start.toISOString(),
         humanFreeSlots,
       });
+      const entries = scheduledEntries.filter((entry) => {
+        if (!entry.endAt || new Date(entry.endAt).getTime() <= end.getTime()) return true;
+        warnings.outsideHorizon.push(entry.taskRef);
+        return false;
+      });
+      if (warnings.outsideHorizon.length > 0) {
+        warnings.messages.push(
+          `${warnings.outsideHorizon.length} task(s) excluded because they exceed the planning horizon`,
+        );
+      }
       const planId = (deps.id ?? randomUUID)();
       const velocitySnapshot = velocities.map((row) => ({
         projectRef: row.projectRef,

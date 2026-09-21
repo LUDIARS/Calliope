@@ -9,7 +9,7 @@ export interface ConfirmedPlanApplyInput {
   expectedActivePlanId: string;
   targetPlanId: string;
   decidedAt: string;
-  decidedBy: string;
+  decidedBy: 'human';
   logId: string;
 }
 

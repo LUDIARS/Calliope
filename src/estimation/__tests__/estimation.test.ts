@@ -37,9 +37,12 @@ describe('estimation', () => {
   });
 
   it('rejects non-contract LLM output', async () => {
-    await expect(estimateWithLlm(
+    const error = await estimateWithLlm(
       { title: 'Implement API', details: null },
-      { claudeBin: 'claude', cwd: 'C:\\repo', runner: async () => 'medium' },
-    )).rejects.toThrow('invalid size');
+      { claudeBin: 'claude', cwd: 'C:\\repo', runner: async () => 'private task details' },
+    ).catch((cause: unknown) => cause);
+    expect(error).toBeInstanceOf(Error);
+    expect((error as Error).message).toContain('invalid size');
+    expect((error as Error).message).not.toContain('private task details');
   });
 });

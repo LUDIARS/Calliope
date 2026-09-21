@@ -18,7 +18,8 @@
 - `POST /api/reschedule/trigger` — manual/event/daily trigger。低リスク200 applied、高リスク409。
 - `GET /api/reschedule/log` — proposed/applied/rejected/expiredを含む監査履歴。
 - `GET /api/confirmations?status=` — 24h expiry反映後のDecision Inbox。
-- `POST /api/confirmations/:id` — `{decision, reason?, decidedBy?}`。
+- `POST /api/confirmations/:id` — `{decision, reason?, decidedBy?: "human"}`。裁定者は
+  service token から個人を認証できないため、非個人 alias `human` のみを記録する。
 - `POST /api/plan/simulate` — dry-run。DB・通知への副作用なし。
 
 ## 自律性・通知

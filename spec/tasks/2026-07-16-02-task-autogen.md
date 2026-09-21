@@ -2,15 +2,10 @@
 task: 02-task-autogen
 project: Calliope
 kind: 実装
-status: delegated
-delegation_run_id: 34256c5f-39b2-4b1b-80af-007b1299d1b5
 created: 2026-07-16T00:00:00.000Z
-source_session: lictor-9747bcfe-3969-4e12-959d-6cf39d3287fc
-memoria_task_id: 530
-actio_task_id: null
 memory_links:
-  - E:/Document/Ars/Calliope/docs/design/task-lifecycle.md
-  - E:/Document/Ars/Calliope/docs/design/pm-extensions.md
+  - docs/design/task-lifecycle.md
+  - docs/design/pm-extensions.md
 ---
 # タスク自動生成 (generate) — 候補検出 + Decision Inbox 経由の Actio 起票
 
@@ -36,6 +31,20 @@ confirmation (`kind: task_create`) として提案、approve 時に Actio へ起
   daily briefing に「タスク生成候補 n 件 (要裁定)」が載る。
 - SRP / レイヤ分離 (clients / feature 純粋ロジック / routes / db) を維持。
 - `npm run typecheck` / `npm test` green。
+
+## 実装メモ (2026-08-04)
+
+- 検出エンジンは `src/taskgen/engine.ts` (純関数)。 dedup は `dedupeCandidates` に集約し、
+  除外分は `suppressed` (理由付き) として報告する (無言 fallback 回避)。
+- 再提案抑止は候補 `key` を pending / rejected の `task_create` confirmation payload から
+  逆引きして行う。 `external_id` は key から決定的に導出するため Actio 側でも冪等。
+- `POST /api/tasks/generate` のみ追加 (候補一覧は既存 `GET /api/confirmations?status=pending`)。
+- 日次 orchestration は `makeDailyLoop` の `generate` ステップ (reschedule → generate → briefing)。
+  briefing は `taskGeneration` 節 + `summary.taskGenerationCandidates` を持つ。
+- タイトル正規化は §G3 と共有するため `src/tasks/title.ts` へ切り出した。
+- 仕様は `spec/feature/task-generation.md` (機能) と
+  `spec/interface/task-generation-api.md` (HTTP 境界) が正本。
+  ドメイン帰属は `.anatomia/domains/*.domain.json` (JSON。Anatomia は YAML を読まない)。
 
 ## スコープ (編集可ディレクトリ)
 

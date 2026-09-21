@@ -129,6 +129,12 @@ describe('P3 autonomy routes', () => {
       method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ decision: 'reject' }),
     });
     expect(response.status).toBe(400);
+    const spoofed = await app.request('/api/confirmations/c1', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ decision: 'reject', reason: 'keep current plan', decidedBy: 'person@example.com' }),
+    });
+    expect(spoofed.status).toBe(400);
+    expect((await repo.getConfirmation('c1'))?.status).toBe('pending');
     const rejected = await app.request('/api/confirmations/c1', {
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ decision: 'reject', reason: 'keep current plan' }),

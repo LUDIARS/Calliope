@@ -1,6 +1,6 @@
 {
   "name": "service-runtime",
-  "description": "プロセスとしての Calliope。 起動、 設定、 共有ユーティリティ、 テスト土台。",
+  "description": "プロセスとしての Calliope。 起動、 設定、 共有ユーティリティ (ドメインをまたいで使うタイトル正規化等)、 テスト土台。",
   "presetRules": [],
   "templateRules": [],
   "membership": [
@@ -9,6 +9,9 @@
     },
     {
       "pathPattern": "(^|/)src/__tests__/(?:.*/)?[^/]+$"
+    },
+    {
+      "pathPattern": "(^|/)src/tasks/(?:.*/)?[^/]+$"
     }
   ]
 }

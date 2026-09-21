@@ -132,6 +132,7 @@ scheduling.md §4.2 を忠実に:
   自律性判定(409)は P3 — P1 では apply は常に成功(低リスク操作のみのため)し、
   結果を `reschedule_log` に `{trigger:'manual_apply', applied_by:'human'}` で記録する。
 - 未見積りタスクは plan に**入れない**(§8)。除外一覧をレスポンス `warnings.unestimated` に明示。
+- `horizonDays` を超えて終了する entry は plan に入れず、`warnings.outsideHorizon` に task_ref を明示する。
 
 ### 横断
 

@@ -44,6 +44,7 @@ export function makeCalendarEngine(deps: {
         continue;
       }
       const payload = {
+        calendarRef: link.calendarRef,
         summary: `Calliope: ${entry.taskRef}`,
         description: 'Calliope plan block',
         start: { dateTime: entry.startAt },
@@ -75,7 +76,7 @@ export function makeCalendarEngine(deps: {
     }
     for (const entry of oldEntries) {
       if (!entry.schedulaEventId || reusable.get(entry.taskRef)?.id !== entry.id) continue;
-      await schedula.deleteCalendarEvent(entry.schedulaEventId);
+      await schedula.deleteCalendarEvent(entry.schedulaEventId, link.calendarRef);
       await deps.repo.setPlanEntrySchedulaEvent(entry.id, null);
       deleted++;
     }

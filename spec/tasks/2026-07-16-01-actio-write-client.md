@@ -2,17 +2,10 @@
 task: 01-actio-write-client
 project: Calliope
 kind: 実装
-status: done
-delegation_run_id: a54bb3c1-e6b9-41de-a52a-661248f856e3
-pr_number: 13
 created: 2026-07-16T00:00:00.000Z
-source_session: lictor-9747bcfe-3969-4e12-959d-6cf39d3287fc
-memoria_task_id: 529
-actio_task_id: null
 memory_links:
-  - E:/Document/Ars/Calliope/docs/design/task-lifecycle.md
-  - E:/Document/Ars/Calliope/CLAUDE.md
-  - E:/Document/Ars/Memoria/server/routes/task.ts
+  - docs/design/task-lifecycle.md
+  - CLAUDE.md
 ---
 # Actio write クライアント (createTask / updateTaskStatus / updateTaskPriority)
 
@@ -41,4 +34,4 @@ memory_links:
 
 - src/clients/
 - src/clients/__tests__/
-- (参照のみ: E:/Document/Ars/Memoria の Actio 共有クライアント、E:/Document/Ars/Actio の API 実装)
+- (参照のみ: Memoria の Actio 共有クライアント、Actio の API 実装)

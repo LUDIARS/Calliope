@@ -8,12 +8,16 @@ import { makeRescheduleEngine } from '../reschedule/engine.ts';
 import { CalendarPrerequisiteError, makeCalendarEngine } from '../calendar/engine.ts';
 import { applyStocktakeProposals } from '../stocktake/apply.ts';
 import { stocktakeConfirmationPayloadSchema } from '../stocktake/payload.ts';
+import { applyTaskCreateCandidates } from '../taskgen/apply.ts';
+import { taskCreateConfirmationPayloadSchema } from '../taskgen/payload.ts';
 import { unconfigured, upstreamFailure } from './errors.ts';
 
 const decisionSchema = z.object({
   decision: z.enum(['approve', 'reject']),
   reason: z.string().trim().min(1).optional(),
-  decidedBy: z.string().trim().min(1).default('human'),
+  // The service-token boundary does not authenticate an individual. Accepting an
+  // arbitrary label would forge the audit trail and could persist a name/email.
+  decidedBy: z.literal('human').default('human'),
 }).superRefine((value, ctx) => {
   if (value.decision === 'reject' && !value.reason) {
     ctx.addIssue({ code: 'custom', path: ['reason'], message: 'reason is required for rejection' });
@@ -55,7 +59,7 @@ export function mountConfirmationRoutes(app: Hono, deps: ConfirmationRoutesDeps)
     const now = new Date();
     if (row.expiresAt <= now.toISOString()) {
       await deps.repo.expireConfirmation(id, now.toISOString(), '24h expiry');
-      if (row.kind === 'calendar_write' || row.kind === 'task_stocktake') {
+      if (row.kind === 'calendar_write' || row.kind === 'task_stocktake' || row.kind === 'task_create') {
         return c.json({ error: 'confirmation_expired' }, 409);
       }
       const reproposal = await reschedule.trigger({ trigger: 'confirmation_expired', refresh: false });
@@ -72,6 +76,21 @@ export function mountConfirmationRoutes(app: Hono, deps: ConfirmationRoutesDeps)
       if (!deps.clients.actio) throw unconfigured('actio');
       try {
         const result = await applyStocktakeProposals(deps.clients.actio, payload.data.proposals);
+        const confirmation = await deps.repo.approveExternalConfirmation(
+          id, parsed.data.decidedBy, now.toISOString(), result,
+        );
+        return c.json({ confirmation, result });
+      } catch (error) {
+        return upstreamFailure(error);
+      }
+    }
+    // §G2: approve で createTask を実行し、 結果 (actio task id) を payload に追記する。
+    if (row.kind === 'task_create') {
+      const payload = taskCreateConfirmationPayloadSchema.safeParse(row.payload);
+      if (!payload.success) return c.json({ error: 'invalid_confirmation_payload' }, 500);
+      if (!deps.clients.actio) throw unconfigured('actio');
+      try {
+        const result = await applyTaskCreateCandidates(deps.clients.actio, payload.data.candidates);
         const confirmation = await deps.repo.approveExternalConfirmation(
           id, parsed.data.decidedBy, now.toISOString(), result,
         );

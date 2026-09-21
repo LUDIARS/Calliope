@@ -11,6 +11,8 @@ P4 binds Calliope to Schedula's Google Calendar implementation. Calliope never c
 - Calendar writes create a `calendar_write` confirmation by default.
 - `CALLIOPE_CALENDAR_AUTO_WRITE=on` is the explicit exception that permits automatic plan-block visualization.
 - Created events contain only opaque task references, time intervals, and private Calliope loop-prevention tags.
+- Create, update, and delete requests carry the selected opaque `calendarRef`; they never fall back to
+  Schedula's default calendar after a non-primary binding is selected.
 - Superseded plans reuse matching task event IDs where possible and delete remaining obsolete events.
 - Partial external failures remain observable and retries reuse already persisted event IDs.
 

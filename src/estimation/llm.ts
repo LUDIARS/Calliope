@@ -24,9 +24,11 @@ const defaultRunner: LlmRunner = (command, args, options) => new Promise((resolv
     timeout: options.timeoutMs,
     maxBuffer: 64 * 1024,
     windowsHide: true,
-  }, (error, stdout, stderr) => {
+  }, (error, stdout) => {
     if (error) {
-      reject(new Error(`LLM estimation failed: ${error.message}${stderr ? ` (${stderr.slice(0, 200)})` : ''}`));
+      // execFile errors can embed argv (including the task prompt). Do not copy
+      // command output or arguments into an exception that may reach logs.
+      reject(new Error('LLM estimation process failed'));
       return;
     }
     resolve(stdout);
@@ -51,7 +53,7 @@ export async function estimateWithLlm(
   );
   const size = output.trim().toUpperCase();
   if (size !== 'S' && size !== 'M' && size !== 'L') {
-    throw new Error(`LLM estimation returned invalid size: ${output.slice(0, 100)}`);
+    throw new Error('LLM estimation returned invalid size');
   }
   return { effortMinutes: LLM_SIZE_MINUTES[size], size };
 }

@@ -34,6 +34,44 @@ function config(): CalliopeConfig {
 }
 
 describe('P5 dashboard and retrospective', () => {
+  it('does not allow cross-origin /api access unless an origin is allowlisted', async () => {
+    // preflight で確認する (ルートハンドラを実行せず CORS ポリシーだけを見る)。
+    const preflight = (app: ReturnType<typeof createApp>, origin: string) => app.request('/api/plan', {
+      method: 'OPTIONS',
+      headers: { origin, 'access-control-request-method': 'POST' },
+    });
+
+    const denied = await preflight(createApp(config(), { db: testDb() }), 'https://evil.example');
+    expect(denied.headers.get('access-control-allow-origin')).toBeNull();
+
+    const allowlisted = { ...config(), corsOrigins: ['https://deck.example'] };
+    const allowed = await preflight(createApp(allowlisted, { db: testDb() }), 'https://deck.example');
+    expect(allowed.headers.get('access-control-allow-origin')).toBe('https://deck.example');
+
+    const notListed = await preflight(createApp(allowlisted, { db: testDb() }), 'https://evil.example');
+    expect(notListed.headers.get('access-control-allow-origin')).toBeNull();
+  });
+
+  it('keeps /service-map outside CORS even when an origin is allowlisted', async () => {
+    // allowlist は `/api/*` の opt-in 経路にだけ効く。 未認証で変更できる面を含む
+    // `/service-map` は allowlist に載ったオリジンからも到達させない。
+    const allowlisted = { ...config(), corsOrigins: ['https://deck.example'] };
+    const app = createApp(allowlisted, { db: testDb() });
+
+    const serviceMap = await app.request('/service-map/admin/api/services', {
+      method: 'OPTIONS',
+      headers: { origin: 'https://deck.example', 'access-control-request-method': 'POST' },
+    });
+    expect(serviceMap.headers.get('access-control-allow-origin')).toBeNull();
+
+    // 同じ allowlist が `/api/*` には効いていること (経路ごとに分かれている証拠)。
+    const api = await app.request('/api/plan', {
+      method: 'OPTIONS',
+      headers: { origin: 'https://deck.example', 'access-control-request-method': 'POST' },
+    });
+    expect(api.headers.get('access-control-allow-origin')).toBe('https://deck.example');
+  });
+
   it('serves a CSP-protected dashboard and static assets', async () => {
     expect(() => new Function(dashboardScript)).not.toThrow();
     const app = createApp(config(), { db: testDb() });

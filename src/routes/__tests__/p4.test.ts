@@ -61,7 +61,7 @@ describe('P4 calendar binding', () => {
     const app = createApp(config(), { db });
     const link = await app.request('/api/calendar/link', {
       method: 'PUT', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ calendarRef: 'primary', syncDirection: 'both', enabled: true }),
+      body: JSON.stringify({ calendarRef: 'schedula:team-alpha', syncDirection: 'both', enabled: true }),
     });
     expect(link.status).toBe(200);
     const request = await app.request('/api/calendar/sync', {
@@ -84,11 +84,21 @@ describe('P4 calendar binding', () => {
       method: 'POST', headers: expect.objectContaining({ authorization: 'Bearer schedula-token' }),
     });
     const sent = JSON.parse(String(call?.[1]?.body)) as Record<string, unknown>;
+    expect(sent.calendarRef).toBe('schedula:team-alpha');
     expect(sent.summary).toBe('Calliope: actio:task-1');
     expect(sent).toMatchObject({ extendedProperties: { private: {
       calliope: 'entry-1', calliopePlan: 'active',
     } } });
     expect(JSON.stringify(sent)).not.toContain('email');
+  });
+
+  it('rejects a raw email calendar id instead of persisting personal data', async () => {
+    const app = createApp(config(), { db: testDb() });
+    const response = await app.request('/api/calendar/link', {
+      method: 'PUT', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ calendarRef: 'person@example.com' }),
+    });
+    expect(response.status).toBe(400);
   });
 
   it('reports an explicit skip when no calendar link is configured', async () => {
@@ -103,19 +113,27 @@ describe('P4 calendar binding', () => {
   });
 
   it('reuses an old plan event when a task moves during supersede', async () => {
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json({
-      event: { id: 'old-event' },
-    }));
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (_input, init) =>
+      init?.method === 'DELETE'
+        ? Response.json({ deleted: true })
+        : Response.json({ event: { id: 'old-event' } }));
     const db = testDb();
     const repo = makeRepository(db);
     await repo.createPlanWithEntries({
       id: 'old', periodStart: '2026-07-13T00:00:00.000Z', periodEnd: '2026-07-14T00:00:00.000Z',
       status: 'active', velocitySnapshot: {}, createdAt: '2026-07-12T00:00:00.000Z',
-    }, [{
-      id: 'old-entry', planId: 'old', taskRef: 'actio:task-1',
-      startAt: '2026-07-13T01:00:00.000Z', endAt: '2026-07-13T02:00:00.000Z',
-      lane: 'ai-1', seq: 0, schedulaEventId: 'old-event', confidence: 1, isHumanGate: false,
-    }]);
+    }, [
+      {
+        id: 'old-entry', planId: 'old', taskRef: 'actio:task-1',
+        startAt: '2026-07-13T01:00:00.000Z', endAt: '2026-07-13T02:00:00.000Z',
+        lane: 'ai-1', seq: 0, schedulaEventId: 'old-event', confidence: 1, isHumanGate: false,
+      },
+      {
+        id: 'obsolete-entry', planId: 'old', taskRef: 'actio:task-2',
+        startAt: '2026-07-13T02:00:00.000Z', endAt: '2026-07-13T03:00:00.000Z',
+        lane: 'ai-1', seq: 1, schedulaEventId: 'obsolete-event', confidence: 1, isHumanGate: false,
+      },
+    ]);
     await repo.createPlanWithEntries({
       id: 'new', periodStart: '2026-07-13T00:00:00.000Z', periodEnd: '2026-07-14T00:00:00.000Z',
       status: 'draft', velocitySnapshot: {}, createdAt: '2026-07-12T01:00:00.000Z',
@@ -136,11 +154,18 @@ describe('P4 calendar binding', () => {
     const response = await app.request('/api/calendar/sync', { method: 'POST', body: '{}' });
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
-      status: 'applied', result: { updated: 1, created: 0, deleted: 0 },
+      status: 'applied', result: { updated: 1, created: 0, deleted: 1 },
     });
     expect((await repo.getPlanEntries('new'))[0]?.schedulaEventId).toBe('old-event');
-    expect((await repo.getPlanEntries('old'))[0]?.schedulaEventId).toBeNull();
+    const oldEntries = await repo.getPlanEntries('old');
+    expect(oldEntries.find((entry) => entry.taskRef === 'actio:task-1')?.schedulaEventId).toBeNull();
+    expect(oldEntries.find((entry) => entry.taskRef === 'actio:task-2')?.schedulaEventId).toBeNull();
     expect(fetchMock.mock.calls[0]?.[0]).toBe('http://schedula.test/api/calendar/events/old-event');
     expect(fetchMock.mock.calls[0]?.[1]?.method).toBe('PATCH');
+    expect(JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body))).toMatchObject({ calendarRef: 'primary' });
+    expect(fetchMock.mock.calls[1]?.[0]).toBe(
+      'http://schedula.test/api/calendar/events/obsolete-event?calendarRef=primary',
+    );
+    expect(fetchMock.mock.calls[1]?.[1]?.method).toBe('DELETE');
   });
 });

@@ -2,8 +2,12 @@
 
 親設計: [`../../DESIGN.md`](../../DESIGN.md) §4/§5。位置づけ: 2026-07-16 neco 指示
 「ProjectHub と連動して PM 的ポジからプロジェクトの進捗を管理する。プロジェクトのスプリントも管理する」
-の設計正本。Calliope を PROJECTHUB(Training Game Academy ゲーム制作ラボの運営 hub、Corpus 派生)の
+の設計正本。Calliope を PROJECTHUB(ゲーム制作ラボの運営 hub、Corpus 派生)の
 **学生ゲーム制作プロジェクトの PM 秘書**として接続する。
+
+> 公開境界: 本書は公開リポに載る設計文書のため、外部組織名・実在団体名を書かない
+> (spec/plan/problem_logs/2026-07-30-public-history-private-reference-regression.md の
+> 「Keep public integration contracts and fixtures label-neutral」)。
 
 ## 全体像(責務分割 — bind, don't reimplement)
 

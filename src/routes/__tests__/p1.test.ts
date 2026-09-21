@@ -262,4 +262,42 @@ describe('P1 routes', () => {
     expect(body.warnings.messages).toEqual(expect.arrayContaining([
       expect.stringContaining('excluded because an unestimated dependency'),
     ]));
-  });});
+  });
+
+  it('excludes entries that would finish after the requested planning horizon', async () => {
+    const db = testDb();
+    const repo = makeRepository(db);
+    const refs = ['task-1', 'task-2'].map((id) => makeTaskRef('actio', id));
+    for (const ref of refs) {
+      await repo.upsertTaskEstimate({
+        taskRef: ref, effortMinutes: 24 * 60, estimateSource: 'human', confidence: 1,
+        estimatedAt: '2026-07-10T00:00:00.000Z',
+      });
+      await repo.upsertPriority({
+        scope: 'task', ref, resolvedScore: 0.5, breakdown: {},
+        firstReadyAt: '2026-07-10T00:00:00.000Z', updatedAt: '2026-07-10T00:00:00.000Z',
+      });
+    }
+    mockActio({ tasks: refs.map((_, index) => ({
+      id: `task-${index + 1}`, title: `Task ${index + 1}`, description: null, requirements: null,
+      status: 'open', kind: 'task', creatorType: 'ai', category: 'calliope', priority: 'medium',
+      deadline: null, estimatedMinutes: 24 * 60, pluginId: null, pluginRef: null,
+      completedAt: null, createdAt: '2026-07-10T00:00:00.000Z',
+    })) });
+    const app = createApp(config({
+      agentLanes: 1, actio: { baseUrl: 'http://actio.test', token: null },
+    }), { db });
+    const response = await app.request('/api/plan/generate', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ horizonDays: 1 }),
+    });
+    expect(response.status).toBe(201);
+    const body = await response.json() as {
+      plan: { periodEnd: string; entries: Array<{ taskRef: string; endAt: string | null }> };
+      warnings: { outsideHorizon: string[] };
+    };
+    expect(body.plan.entries).toHaveLength(1);
+    expect(body.plan.entries.every((entry) => !entry.endAt || entry.endAt <= body.plan.periodEnd)).toBe(true);
+    expect(body.warnings.outsideHorizon).toEqual([refs[1]]);
+  });
+});

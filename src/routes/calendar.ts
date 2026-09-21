@@ -7,7 +7,9 @@ import { makeCalendarEngine } from '../calendar/engine.ts';
 import { upstreamFailure } from './errors.ts';
 
 const linkSchema = z.object({
-  calendarRef: z.literal('primary').default('primary'),
+  calendarRef: z.string().trim().min(1).max(128)
+    .regex(/^[^\s@]+$/, 'calendarRef must be primary or an opaque Schedula reference')
+    .default('primary'),
   syncDirection: z.enum(['read', 'write', 'both']).default('both'),
   enabled: z.boolean().default(true),
 });

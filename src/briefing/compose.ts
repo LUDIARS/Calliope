@@ -1,5 +1,13 @@
+/**
+ * 日次ブリーフィングの組み立て (純関数)。 タスク生成候補の節は生きている
+ * confirmation の `payload.summary` だけから作り、 新たな上流呼び出しはしない。
+ *
+ * @spec 実行タイミング
+ */
+
 import { z } from 'zod';
 import { stocktakeSummarySchema } from '../stocktake/payload.ts';
+import { taskGenerationSummarySchema } from '../taskgen/payload.ts';
 
 const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -26,7 +34,7 @@ export interface BriefingSprint {
 
 export interface BriefingConfirmation {
   id: string;
-  kind: 'plan_apply' | 'reschedule' | 'calendar_write' | 'task_stocktake';
+  kind: 'plan_apply' | 'reschedule' | 'calendar_write' | 'task_stocktake' | 'task_create';
   expiresAt: string;
   payload?: unknown;
 }
@@ -52,6 +60,22 @@ function jstDayRange(now: Date) {
   return { start, end: start + DAY_MS, date: new Date(start + JST_OFFSET_MS).toISOString().slice(0, 10) };
 }
 
+/** 生きている confirmation から指定 kind の payload.summary を取り出す (無ければ null)。 */
+function confirmationSummary<Summary extends object>(
+  confirmations: BriefingConfirmation[],
+  kind: BriefingConfirmation['kind'],
+  schema: z.ZodType<Summary>,
+): ({ confirmationId: string } & Summary) | null {
+  const active = confirmations.find((item) => item.kind === kind);
+  if (!active) return null;
+  const summary = schema.safeParse(
+    active.payload && typeof active.payload === 'object'
+      ? (active.payload as { summary?: unknown }).summary
+      : undefined,
+  );
+  return summary.success ? { confirmationId: active.id, ...summary.data } : null;
+}
+
 function overlapsDay(entry: BriefingPlanEntry, start: number, end: number): boolean {
   if (!entry.startAt && !entry.endAt) return false;
   const entryStart = entry.startAt ? Date.parse(entry.startAt) : Number.NEGATIVE_INFINITY;
@@ -74,18 +98,10 @@ export function composeDailyBriefing(input: ComposeBriefingInput) {
   const liveConfirmations = input.confirmations
     .filter((item) => Date.parse(item.expiresAt) > input.now.getTime());
   const decisions = liveConfirmations.map(({ id, kind, expiresAt }) => ({ id, kind, expiresAt }));
-  // 棚卸しサマリ (task-lifecycle §G3): 最新の pending task_stocktake confirmation の
-  // 集計値だけを載せる。 新たな上流呼び出しはせず、 個人データも持ち込まない。
-  const stocktake = (() => {
-    const active = liveConfirmations.find((item) => item.kind === 'task_stocktake');
-    if (!active) return null;
-    const summary = stocktakeSummarySchema.safeParse(
-      active.payload && typeof active.payload === 'object'
-        ? (active.payload as { summary?: unknown }).summary
-        : undefined,
-    );
-    return summary.success ? { confirmationId: active.id, ...summary.data } : null;
-  })();
+  // 棚卸しサマリ (§G3) / タスク生成候補サマリ (§G2): 生きている confirmation の payload.summary
+  // だけを載せる。 新たな上流呼び出しはせず、 個人データも持ち込まない。
+  const stocktake = confirmationSummary(liveConfirmations, 'task_stocktake', stocktakeSummarySchema);
+  const taskGeneration = confirmationSummary(liveConfirmations, 'task_create', taskGenerationSummarySchema);
   const sprintAlerts = input.sprints.flatMap((sprint) => {
     const parsed = sprint.latestCurve ? curveHealthSchema.safeParse(sprint.latestCurve.gompertzParams) : null;
     return parsed?.success && parsed.data.health.status === 'at_risk'
@@ -119,12 +135,15 @@ export function composeDailyBriefing(input: ComposeBriefingInput) {
     upcomingDeadlines,
     humanGates,
     stocktake,
+    taskGeneration,
     summary: {
       tasks: entries.length,
       decisions: decisions.length,
       alerts: sprintAlerts.length + riskAlerts.length,
       humanGates: humanGates.length,
       stocktakeProposals: stocktake?.proposals ?? 0,
+      // 「タスク生成候補 n 件 (要裁定)」 (design §G2)。
+      taskGenerationCandidates: taskGeneration?.candidates ?? 0,
     },
   };
 }

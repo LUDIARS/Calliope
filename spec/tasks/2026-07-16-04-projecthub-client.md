@@ -2,14 +2,9 @@
 task: 04-projecthub-client
 project: Calliope
 kind: 実装
-status: pending
 created: 2026-07-16T00:00:00.000Z
-source_session: lictor-9747bcfe-3969-4e12-959d-6cf39d3287fc
-memoria_task_id: 532
-actio_task_id: null
 memory_links:
-  - E:/Document/Ars/Calliope/docs/design/projecthub-pm.md
-  - E:/Document/Ars/PROJECTHUB/spec/tasks/2026-07-16-01-pm-task-source.md
+  - docs/design/projecthub-pm.md
 ---
 # ProjectHubConnector + PROJECTHUB プロジェクトバインド
 

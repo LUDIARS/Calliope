@@ -12,6 +12,7 @@ import { startWeeklyOrchestrator } from './orchestration/weekly.ts';
 import { makeRetrospectiveEngine } from './retrospective/engine.ts';
 import { makeProjectHubWeeklyEngine } from './retrospective/projecthub-weekly.ts';
 import { makeStocktakeService } from './stocktake/service.ts';
+import { makeTaskGenerationService } from './taskgen/service.ts';
 
 const config = loadConfig();
 if (!config.serviceToken) {
@@ -24,14 +25,26 @@ const app = createApp(config, { db, clients });
 
 const server = serve({ fetch: app.fetch, port: config.port }, (info) => {
   console.log(`[calliope] listening on http://localhost:${info.port}`);
-  console.log(`[calliope] upstreams: actio=${config.actio.baseUrl ?? '(unset)'} ` +
-    `schedula=${config.schedula.baseUrl ?? '(unset)'} memoria=${config.memoria.baseUrl ?? '(unset)'}`);
+  console.log(`[calliope] upstreams: actio=${config.actio.baseUrl ? 'configured' : 'unset'} ` +
+    `schedula=${config.schedula.baseUrl ? 'configured' : 'unset'} ` +
+    `memoria=${config.memoria.baseUrl ? 'configured' : 'unset'}`);
 });
 
 const daily = config.dailyOrchestration !== false
   ? startDailyOrchestrator(
     makeDailyLoop({
       reschedule: () => makeRescheduleEngine({ config, clients, repo }).trigger({ trigger: 'daily' }),
+      // タスク自動生成 (task-lifecycle §G2): 日次 07:30 JST。 上流未設定は無言 fallback せず明示スキップ。
+      generate: config.taskGenerate === false
+        ? undefined
+        : () => clients.actio
+          ? makeTaskGenerationService({
+            config,
+            actio: clients.actio,
+            repo,
+            retrospective: makeRetrospectiveEngine({ clients, repo }),
+          }).generate()
+          : Promise.resolve({ status: 'skipped' as const, warning: 'actio_unconfigured' }),
       briefing: () => makeBriefingEngine({ clients, repo }).sendToday(),
     }),
     {

@@ -21,6 +21,15 @@ export interface EventRange {
   maxResults?: number;
 }
 
+export interface CalendarEventInput {
+  calendarRef: string;
+  summary: string;
+  description?: string;
+  start: { dateTime: string };
+  end: { dateTime: string };
+  extendedProperties: { private: Record<string, string> };
+}
+
 function query(params: Record<string, string | number | undefined>) {
   const qs = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
@@ -54,29 +63,17 @@ export function makeSchedulaClient(opts: SchedulaClientOptions) {
         timeMin: range.from, timeMax: range.to,
       })}`));
     },
-    async createCalendarEvent(input: {
-      summary: string;
-      description?: string;
-      start: { dateTime: string };
-      end: { dateTime: string };
-      extendedProperties: { private: Record<string, string> };
-    }) {
+    async createCalendarEvent(input: CalendarEventInput) {
       return calendarEventResponseSchema.parse(await http.post<unknown>('/api/calendar/events', input)).event;
     },
-    async patchCalendarEvent(id: string, input: {
-      summary: string;
-      description?: string;
-      start: { dateTime: string };
-      end: { dateTime: string };
-      extendedProperties: { private: Record<string, string> };
-    }) {
+    async patchCalendarEvent(id: string, input: CalendarEventInput) {
       return calendarEventResponseSchema.parse(await http.patch<unknown>(
         `/api/calendar/events/${encodeURIComponent(id)}`, input,
       )).event;
     },
-    async deleteCalendarEvent(id: string) {
+    async deleteCalendarEvent(id: string, calendarRef: string) {
       return calendarDeleteResponseSchema.parse(await http.del<unknown>(
-        `/api/calendar/events/${encodeURIComponent(id)}`,
+        `/api/calendar/events/${encodeURIComponent(id)}${query({ calendarRef })}`,
       ));
     },
     async pullCalendar() {

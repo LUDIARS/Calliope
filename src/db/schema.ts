@@ -99,7 +99,9 @@ export const rescheduleLog = sqliteTable('reschedule_log', {
 
 export const confirmation = sqliteTable('confirmation', {
   id: text('id').primaryKey(),
-  kind: text('kind', { enum: ['plan_apply', 'reschedule', 'calendar_write', 'task_stocktake'] }).notNull(),
+  kind: text('kind', {
+    enum: ['plan_apply', 'reschedule', 'calendar_write', 'task_stocktake', 'task_create'],
+  }).notNull(),
   payload: text('payload', { mode: 'json' }).$type<unknown>().notNull(),
   status: text('status', { enum: ['pending', 'approved', 'rejected', 'expired'] }).notNull().default('pending'),
   createdAt: text('created_at').notNull(),

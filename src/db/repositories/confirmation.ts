@@ -2,7 +2,13 @@ import { and, eq, lt } from 'drizzle-orm';
 import type { CalliopeDb } from '../client.ts';
 import { confirmation, rescheduleLog } from '../schema.ts';
 
-export type ConfirmationKind = 'plan_apply' | 'reschedule' | 'calendar_write' | 'task_stocktake';
+export type ConfirmationKind =
+  | 'plan_apply'
+  | 'reschedule'
+  | 'calendar_write'
+  | 'task_stocktake'
+  /** docs/design/task-lifecycle.md §G2: タスク自動生成の起票提案。 */
+  | 'task_create';
 export type ConfirmationStatus = 'pending' | 'approved' | 'rejected' | 'expired';
 
 export interface ConfirmationInput {
@@ -46,7 +52,7 @@ export function makeConfirmationRepository(db: CalliopeDb) {
       return expired.map((row) => row.id);
     },
 
-    async rejectConfirmation(id: string, decidedBy: string, reason: string, decidedAt: string) {
+    async rejectConfirmation(id: string, decidedBy: 'human', reason: string, decidedAt: string) {
       return db.transaction((tx) => {
         const row = tx.select().from(confirmation).where(eq(confirmation.id, id)).get();
         if (!row) throw new Error(`confirmation not found: ${id}`);
@@ -60,7 +66,7 @@ export function makeConfirmationRepository(db: CalliopeDb) {
       });
     },
 
-    async approveExternalConfirmation(id: string, decidedBy: string, decidedAt: string, result: unknown) {
+    async approveExternalConfirmation(id: string, decidedBy: 'human', decidedAt: string, result: unknown) {
       return db.transaction((tx) => {
         const row = tx.select().from(confirmation).where(eq(confirmation.id, id)).get();
         if (!row) throw new Error(`confirmation not found: ${id}`);
