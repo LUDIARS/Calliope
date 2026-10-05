@@ -5,6 +5,8 @@ import type { CalliopeConfig } from './config.ts';
 import { openDb } from './db/client.ts';
 import { makeRepository } from './db/repository.ts';
 import { apiAuth } from './routes/auth.ts';
+import type { ServiceTokenVerifier } from './auth/service-token-verifier.ts';
+import { makeServiceTokenClientFromConfig, makeServiceTokenVerifierFromConfig } from './auth/service-auth-setup.ts';
 import { mountEstimateRoutes } from './routes/estimates.ts';
 import { mountConfirmationRoutes } from './routes/confirmations.ts';
 import { mountBriefingRoutes } from './routes/briefing.ts';
@@ -29,17 +31,22 @@ import { mountServiceMapRoutes } from './routes/servicemap.ts';
 export interface CreateAppDeps {
   db?: ReturnType<typeof openDb>;
   clients?: CalliopeClients;
+  /** Cernere service token の受け口。 未指定なら config から組み立てる (欠けていれば固定トークンのみ)。 */
+  serviceTokenVerifier?: ServiceTokenVerifier | null;
 }
 
 export function createApp(config: CalliopeConfig, deps: CreateAppDeps = {}) {
   const app = new Hono();
   const db = deps.db ?? openDb(config.dbPath);
   const repo = makeRepository(db);
-  const clients = deps.clients ?? makeClients(config);
+  const clients = deps.clients ?? makeClients(config, makeServiceTokenClientFromConfig(config));
+  const serviceTokenVerifier = deps.serviceTokenVerifier !== undefined
+    ? deps.serviceTokenVerifier
+    : makeServiceTokenVerifierFromConfig(config);
 
   // CORS は経路ごとに許可が割れるため routes/cors.ts が持つ。
   mountCors(app, { config });
-  app.use('/api/*', apiAuth(config.serviceToken));
+  app.use('/api/*', apiAuth(config.serviceToken, serviceTokenVerifier));
   mountUiRoutes(app);
   // サービスマップは /api/* とは別系統の認可 (公開 read + admin Bearer)。apiAuth は掛けない。
   mountServiceMapRoutes(app, { config, clients, repo });

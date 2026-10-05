@@ -10,6 +10,7 @@ services:
     component: backend
     port: 8891
     depends_on:
+      - cernere
       - actio
       - schedula
       - memoria-server
@@ -26,6 +27,14 @@ services:
       # 認可は Cloudflare Access の三層 (public/ルート/admin) が正で、
       # CALLIOPE_SERVICEMAP_ADMIN_TOKEN は秘密のため catalog には書かない。
       EXCUBITOR_BASE_URL: http://127.0.0.1:17332
+      # 認証集約 P4: Cernere service token の受け側 aud (managed_projects.storage_slug) と、
+      # GLAB (PROJECTHUB) へ送るときの target_project_key。CERNERE_BASE_URL は topology が配る。
+      CALLIOPE_STORAGE_SLUG: calliope
+      PROJECTHUB_PROJECT_KEY: EducationLab
+    # 送り側の Cernere project client credentials (CERNERE_PROJECT_CLIENT_ID / _SECRET) を注入する。
+    # Cernere migration 058 の calliope project。
+    cernere_launch_credentials:
+      target_project: calliope
     autostart: false
     health:
       type: http

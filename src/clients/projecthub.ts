@@ -18,6 +18,8 @@
 // 生成することで表現する (§7.1 無言フォールバック禁止 — 他コネクタと同じ規約)。
 
 import { makeHttp } from './http.ts';
+import { makeServiceAuthHeader } from './service-auth-header.ts';
+import type { ServiceTokenClient } from '../auth/service-token-client.ts';
 import {
   projecthubProjectResponseSchema,
   projecthubProjectsResponseSchema,
@@ -29,8 +31,12 @@ export interface ProjectHubClientOptions {
   baseUrl: string;
   /** Cernere で検証可能な user bearer token (他コネクタと同じ経路)。 未保持なら null。 */
   token: string | null;
-  /** PROJECTHUB requireServiceToken ゲートに提示する固定トークン (X-ProjectHub-Service-Token)。必須。 */
-  serviceToken: string;
+  /** PROJECTHUB requireServiceToken ゲートに提示する固定トークン (X-ProjectHub-Service-Token)。P5 で撤去。 */
+  serviceToken: string | null;
+  /** Cernere service token の取得口 (認証集約 P4)。 取れれば固定トークンより優先する。 */
+  serviceTokens?: ServiceTokenClient | null;
+  /** service token の target_project_key (GLAB = EducationLab)。 */
+  targetProjectKey?: string | null;
 }
 
 const EXTERNAL_BASE = '/api/x/projects/external';
@@ -40,7 +46,13 @@ export function makeProjectHubClient(opts: ProjectHubClientOptions) {
     baseUrl: opts.baseUrl,
     token: opts.token,
     service: 'projecthub',
-    headers: { 'x-projecthub-service-token': opts.serviceToken },
+    headers: makeServiceAuthHeader({
+      header: 'x-projecthub-service-token',
+      service: 'projecthub',
+      serviceTokens: opts.serviceTokens ?? null,
+      targetProjectKey: opts.targetProjectKey ?? null,
+      fixedToken: opts.serviceToken,
+    }),
   });
 
   return {

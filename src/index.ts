@@ -2,6 +2,7 @@ import { serve } from '@hono/node-server';
 import { createApp } from './app.ts';
 import { makeClients } from './clients/index.ts';
 import { loadConfig } from './config.ts';
+import { makeServiceTokenClientFromConfig, makeServiceTokenVerifierFromConfig } from './auth/service-auth-setup.ts';
 import { openDb } from './db/client.ts';
 import { makeRepository } from './db/repository.ts';
 import { startDailyOrchestrator } from './orchestration/daily.ts';
@@ -15,13 +16,14 @@ import { makeStocktakeService } from './stocktake/service.ts';
 import { makeTaskGenerationService } from './taskgen/service.ts';
 
 const config = loadConfig();
-if (!config.serviceToken) {
-  console.warn('[calliope] CALLIOPE_SERVICE_TOKEN is unset; /api routes are unauthenticated');
+const serviceTokenVerifier = makeServiceTokenVerifierFromConfig(config);
+if (!config.serviceToken && !serviceTokenVerifier) {
+  console.warn('[calliope] neither CALLIOPE_SERVICE_TOKEN nor Cernere service token verification (CERNERE_BASE_URL + CALLIOPE_STORAGE_SLUG) is configured; /api routes are unauthenticated');
 }
 const db = openDb(config.dbPath);
-const clients = makeClients(config);
+const clients = makeClients(config, makeServiceTokenClientFromConfig(config));
 const repo = makeRepository(db);
-const app = createApp(config, { db, clients });
+const app = createApp(config, { db, clients, serviceTokenVerifier });
 
 const server = serve({ fetch: app.fetch, port: config.port }, (info) => {
   console.log(`[calliope] listening on http://localhost:${info.port}`);

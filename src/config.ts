@@ -7,8 +7,20 @@ export interface ProjectHubUpstreamConfig {
   baseUrl: string | null;
   /** Cernere で検証可能な user bearer (任意、他コネクタと同じ経路)。 */
   token: string | null;
-  /** PROJECTHUB requireServiceToken ゲートの固定トークン (X-ProjectHub-Service-Token)。 */
+  /** PROJECTHUB requireServiceToken ゲートの固定トークン (X-ProjectHub-Service-Token)。P5 で撤去。 */
   serviceToken: string | null;
+  /** Cernere service token の target_project_key (GLAB = EducationLab)。 */
+  targetProjectKey?: string | null;
+}
+
+/** Cernere service token (認証集約 P4) の送り・受けに使う設定。 */
+export interface CernereServiceAuthConfig {
+  baseUrl: string | null;
+  /** 受け側としての自分の storage_slug。 service token の aud と照合する。 */
+  storageSlug: string | null;
+  /** 送り側の project client credentials (Excubitor cernere_launch_credentials で注入)。 */
+  clientId: string | null;
+  clientSecret: string | null;
 }
 
 export interface CalliopeConfig {
@@ -16,6 +28,7 @@ export interface CalliopeConfig {
   dbPath: string;
   agentLanes: number;
   serviceToken: string | null;
+  cernere?: CernereServiceAuthConfig;
   /**
    * クロスオリジンで `/api/*` を叩けるオリジンの allowlist (`CALLIOPE_CORS_ORIGINS`, カンマ区切り)。
    * 既定は空 = 同一オリジンのみ。 ダッシュボードは同一オリジン配信なので既定で足りる。
@@ -74,6 +87,12 @@ export function loadConfig(): CalliopeConfig {
     dbPath: process.env.CALLIOPE_DB_PATH ?? './data/calliope.db',
     agentLanes: positiveInteger(process.env.CALLIOPE_AGENT_LANES, 3, 'CALLIOPE_AGENT_LANES'),
     serviceToken: firstEnv('CALLIOPE_SERVICE_TOKEN'),
+    cernere: {
+      baseUrl: firstEnv('CERNERE_BASE_URL', 'CERNERE_URL'),
+      storageSlug: firstEnv('CALLIOPE_STORAGE_SLUG'),
+      clientId: firstEnv('CERNERE_PROJECT_CLIENT_ID'),
+      clientSecret: firstEnv('CERNERE_PROJECT_CLIENT_SECRET'),
+    },
     corsOrigins: (firstEnv('CALLIOPE_CORS_ORIGINS') ?? '')
       .split(',')
       .map((origin) => origin.trim())
@@ -111,6 +130,7 @@ export function loadConfig(): CalliopeConfig {
       baseUrl: firstEnv('PROJECTHUB_BASE_URL', 'PROJECTHUB_API_URL', 'PROJECTHUB_URL'),
       token: firstEnv('PROJECTHUB_TOKEN'),
       serviceToken: firstEnv('PROJECTHUB_PROJECTS_SERVICE_TOKEN'),
+      targetProjectKey: firstEnv('PROJECTHUB_PROJECT_KEY') ?? 'EducationLab',
     },
     concordiaBaseUrl: firstEnv('CONCORDIA_BASE_URL', 'CONCORDIA_URL'),
     nuntiusBaseUrl: firstEnv('NUNTIUS_BASE_URL', 'NUNTIUS_URL'),
