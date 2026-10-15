@@ -33,3 +33,10 @@ Calliope の品質基準は「上流を二重実装せず、同じ入力から�
 5. sprint容量からbug/inflow予約を控除し、日次replanでburndown・提案・F4 riskを履歴化する。
 
 異常系は正常系と同じPRで追加する。特に認証不一致、上流未設定/非2xx/契約違反、循環依存、未見積り、非draft applyを回帰対象とする。
+
+## Augur テスト台帳
+
+- 正本は `.augur/tests.jsonl` (登録テストの一覧) と `.augur/tests.config.json` (runner 設定)。どちらも git で追跡する。
+- 各テストは `spec/domains/*.domain.json` のドメインへ `domains.program` で帰属する。Revisor の CI は台帳があると、変更ドメインに結び付いたテストだけを選んで実行する (台帳が無いと毎回全体スイート)。
+- 帰属はテストファイルの対象ソース (`src/<dir>/__tests__/x.test.ts` なら `src/<dir>/`) の membership で決める。`src/auth/` はどのドメインにも属さないため、`/api` の認証境界として `http-api` に帰属させている。
+- テストを足したら `node ../Augur/bin/augur.mjs tests register --repo . --file <path> --name <path> --runner vitest --program <domain>` で登録し、`augur tests lint --repo .` で台帳を検証する。手で JSONL を書かない (id は Augur が採番する)。

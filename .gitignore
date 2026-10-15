@@ -20,3 +20,10 @@ logs/
 # git は除外ディレクトリ内のファイルを `!` で再包含できず、 layers.json をコミットできなくなる。
 .anatomia/*
 !.anatomia/layers.json
+
+# Augur のローカル状態。 例外はテスト台帳 tests.jsonl と実行設定 tests.config.json —
+# Revisor の CI はこの台帳の有無で、 変更ドメインに結び付いたテストだけを選ぶか全体スイートを
+# 回すかを決める。 .anatomia/ と同じ理由でディレクトリごと除外する形にはしないこと。
+.augur/*
+!.augur/tests.jsonl
+!.augur/tests.config.json
